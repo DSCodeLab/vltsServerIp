@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>VLTS Network Registry</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root{
+    --bg:#F5F7FA;
+    --panel:#FFFFFF;
+    --panel-2:#F1F4F8;
+    --border:#DCE2EA;
+    --border-soft:#E6EAF0;
+    --text:#1B2430;
+    --muted:#68717E;
+    --muted-2:#98A1AD;
+    --accent:#0D9488;
+    --accent-dim:#E3F5F2;
+    --amber:#B5720A;
+    --amber-dim:#FCEACB;
+    --red:#D6413B;
+    --transport:#2563EB;
+    --mining:#C2620A;
+    --fci:#7C3AED;
+    --other:#0E9A6B;
+    --mono: ui-monospace, "SF Mono", "Cascadia Mono", "JetBrains Mono", Consolas, monospace;
+    --sans: -apple-system, "Segoe UI", Inter, Roboto, Helvetica, Arial, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:var(--sans);}
+  body{padding:28px 32px 60px;}
+  ::selection{background:var(--accent-dim);color:var(--accent);}
+
+  .topbar{display:flex;align-items:flex-start;justify-content:space-between;gap:24px;margin-bottom:22px;flex-wrap:wrap;}
+  .brand{display:flex;align-items:center;gap:14px;}
+  .brand-mark{width:40px;height:40px;border-radius:9px;background:linear-gradient(145deg,var(--accent),#0e7c6e);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-weight:700;color:#04201c;font-size:13px;flex-shrink:0;}
+  .brand h1{font-size:19px;margin:0;letter-spacing:0.2px;font-weight:650;}
+  .brand p{margin:2px 0 0;color:var(--muted);font-size:12.5px;font-family:var(--mono);}
+  .pulse{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--accent);margin-right:7px;box-shadow:0 0 0 0 rgba(45,212,191,.6);animation:pulse 2s infinite;}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(45,212,191,.45);}70%{box-shadow:0 0 0 7px rgba(45,212,191,0);}100%{box-shadow:0 0 0 0 rgba(45,212,191,0);}}
+
+  .actions{display:flex;gap:10px;flex-wrap:wrap;}
+  button{font-family:var(--sans);cursor:pointer;border-radius:8px;font-size:13px;font-weight:600;border:1px solid var(--border);background:var(--panel-2);color:var(--text);padding:9px 14px;transition:border-color .15s, background .15s;}
+  button:hover{border-color:#354150;background:#1B2330;}
+  button.primary{background:var(--accent);color:#04201c;border-color:var(--accent);}
+  button.primary:hover{background:#3fe0ca;}
+  button.ghost{background:transparent;}
+
+  .stats{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:22px;}
+  .stat{background:var(--panel);border:1px solid var(--border-soft);border-radius:10px;padding:14px 16px;}
+  .stat .n{font-family:var(--mono);font-size:23px;font-weight:600;color:var(--accent);}
+  .stat .l{font-size:11.5px;color:var(--muted);margin-top:3px;text-transform:uppercase;letter-spacing:.5px;}
+
+  .toolbar{display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap;background:var(--panel);border:1px solid var(--border-soft);border-radius:10px;padding:10px 12px;}
+  .search{flex:1;min-width:200px;position:relative;}
+  .search input{width:100%;background:var(--panel-2);border:1px solid var(--border);border-radius:7px;color:var(--text);padding:8px 12px 8px 30px;font-size:13px;font-family:var(--mono);}
+  .search input:focus{outline:none;border-color:var(--accent);}
+  .search::before{content:"⌕";position:absolute;left:10px;top:7px;color:var(--muted);font-size:14px;}
+  .chip{padding:6px 12px;border-radius:20px;background:var(--panel-2);border:1px solid var(--border);color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;}
+  .chip.active{background:var(--accent-dim);color:var(--accent);border-color:var(--accent);}
+  .tabs{display:flex;gap:4px;background:var(--panel-2);padding:3px;border-radius:8px;border:1px solid var(--border);}
+  .tab{padding:6px 14px;border-radius:6px;font-size:12.5px;font-weight:600;color:var(--muted);cursor:pointer;}
+  .tab.active{background:var(--accent);color:#04201c;}
+
+  table{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed;}
+
+  /* ===== STATE TABLE COLUMN WIDTHS — edit these % values manually as needed ===== */
+  #thead th:nth-child(1){width:4%;}   /* # */
+  #thead th:nth-child(2){width:15%;}  /* State / UT */
+  #thead th:nth-child(3){width:9%;}   /* Category */
+  #thead th:nth-child(4){width:13%;}   /* Backend */
+  #thead th:nth-child(5){width:9%;}   /* Vendor */
+  #thead th:nth-child(6){width:21%;}  /* Primary IP / URL <-- reduce this % to shrink */
+  #thead th:nth-child(7){width:7%;}   /* Port */
+  #thead th:nth-child(8){width:21%;}  /* Emergency IP <-- reduce this % to shrink */
+  #thead th:nth-child(9){width:7%;}   /* Port */
+  #thead th:nth-child(10){width:10%;} /* Login URL */
+  td, th{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  td.mono, .alt{white-space:normal;word-break:break-all;}
+  thead th{text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted-2);padding:9px 12px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--bg);}
+  tbody tr{border-bottom:1px solid var(--border-soft);}
+  tbody tr:hover{background:var(--panel);}
+  td{padding:10px 12px;vertical-align:top;}
+  .state-name{font-weight:650;}
+  .sub{color:var(--muted);font-size:11.5px;}
+  .cat-badge{display:inline-block;padding:2px 8px;border-radius:5px;font-size:11px;font-weight:700;font-family:var(--mono);}
+  .cat-Transport{background:rgba(91,156,246,.14);color:var(--transport);}
+  .cat-Mining{background:rgba(245,147,75,.14);color:var(--mining);}
+  .cat-FCI, .cat-FCIPaddy{background:rgba(176,139,240,.14);color:var(--fci);}
+  .cat-other{background:rgba(78,216,160,.14);color:var(--other);}
+  .mono{font-family:var(--mono);font-size:12.3px;}
+  .ip-row{display:flex;align-items:center;gap:6px;}
+  .ip-row a{color:var(--text);text-decoration:none;}
+  .port{color:var(--muted);}
+  .alt{display:block;color:var(--amber);font-size:11px;margin-top:2px;font-family:var(--mono);}
+  .link-btn{color:var(--accent);text-decoration:none;font-size:12px;font-weight:600;}
+  .link-btn:hover{text-decoration:underline;}
+  .row-actions{display:flex;gap:8px;justify-content:center;overflow:visible;}
+  .icon-btn{background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;padding:2px 5px;}
+  .icon-btn:hover{color:var(--text);}
+  .edit-box-btn{background:var(--panel-2);border:1px solid var(--border);color:var(--text);cursor:pointer;font-size:11px;font-weight:600;padding:4px 10px;border-radius:6px;white-space:nowrap;line-height:1.4;}
+  .edit-box-btn:hover{border-color:var(--accent);color:var(--accent);}
+  td:last-child{overflow:visible;text-align:center;}
+  .empty{text-align:center;color:var(--muted);padding:50px 0;font-size:13px;}
+  .userAdded{border-left:3px solid var(--accent);}
+
+  .table-wrap{background:var(--panel);border:1px solid var(--border-soft);border-radius:10px;overflow:auto;max-height:62vh;}
+
+  /* Modal */
+  .overlay{position:fixed;inset:0;background:rgba(4,6,9,.7);display:none;align-items:center;justify-content:center;z-index:50;backdrop-filter:blur(2px);}
+  .overlay.show{display:flex;}
+  .sync-pill{display:inline-block;margin-left:10px;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700;font-family:var(--sans);border:1px solid var(--border);}
+  .sync-pill.off{color:var(--muted);background:var(--panel-2);}
+  .sync-pill.live{color:var(--accent);background:var(--accent-dim);border-color:var(--accent);}
+  .sync-pill.busy{color:var(--amber);background:var(--amber-dim);border-color:var(--amber);}
+  .sync-pill.err{color:var(--red);background:#FDE8E7;border-color:var(--red);}
+  .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--text);color:var(--panel);padding:10px 16px;border-radius:8px;font-size:13px;display:none;z-index:80;max-width:90vw;}
+  .toast.show{display:block;}
+  .modal{background:var(--panel-2);border:1px solid var(--border);border-radius:12px;width:520px;max-width:92vw;max-height:88vh;overflow:auto;padding:22px;}
+  .modal h2{margin:0 0 4px;font-size:16px;}
+  .modal p.hint{color:var(--muted);font-size:12px;margin:0 0 16px;}
+  .field{margin-bottom:12px;}
+  .field label{display:block;font-size:11.5px;color:var(--muted);margin-bottom:5px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;}
+  .field input, .field select{width:100%;background:var(--panel);border:1px solid var(--border);border-radius:7px;color:var(--text);padding:8px 10px;font-size:13px;font-family:var(--sans);}
+  .field input:focus, .field select:focus{outline:none;border-color:var(--accent);}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px;}
+  footer{margin-top:20px;color:var(--muted-2);font-size:11.5px;font-family:var(--mono);text-align:center;}
+
+  @media (max-width:900px){
+    .stats{grid-template-columns:repeat(2,1fr);}
+    body{padding:18px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <div class="brand-mark">VLT</div>
+    <div>
+      <h1><span class="pulse"></span>VLTS Network Registry</h1>
+      <p>State &amp; client server IP / URL directory — India <span id="syncPill" class="sync-pill off">● Not connected</span></p>
+    </div>
+  </div>
+  <div class="actions">
+    <button class="ghost" id="btnConnect">⚙ Connect Sheet</button>
+    <button class="ghost" id="btnUpload">⇪ Import Excel</button>
+    <input type="file" id="fileInput" accept=".xlsx" style="display:none">
+    <button class="ghost" id="btnExport">⇩ Export to Excel</button>
+    <button class="primary" id="btnAdd">+ Add Entry</button>
+  </div>
+</div>
+
+<div class="stats" id="stats"></div>
+
+<div class="toolbar">
+  <div class="tabs">
+    <div class="tab active" data-tab="states">State IP</div>
+    <div class="tab" data-tab="clients">Client IP</div>
+  </div>
+  <div class="search"><input id="searchInput" placeholder="Search state, backend, IP, URL..."></div>
+  <div id="catChips" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead id="thead"></thead>
+    <tbody id="tbody"></tbody>
+  </table>
+</div>
+
+<footer id="footerNote">Not connected to Google Sheet — click "Connect Sheet" to turn on live two-way sync</footer>
+
+<!-- Connect Sheet modal -->
+<div class="overlay" id="cfgOverlay">
+  <div class="modal">
+    <h2>Connect Google Sheet</h2>
+    <p class="hint">Sheet ke Extensions → Apps Script mein Code.gs paste karke Web App deploy karein, phir uska URL aur apna secret token yahan daalein.</p>
+    <div class="field"><label>Web App URL</label><input id="cfgUrl" placeholder="https://script.google.com/macros/s/.../exec"></div>
+    <div class="field"><label>Secret Token</label><input id="cfgToken" placeholder="same word as TOKEN in Code.gs"></div>
+    <div id="cfgMsg" class="hint" style="min-height:18px;"></div>
+    <div class="modal-actions">
+      <button class="ghost" id="cfgDisconnect">Disconnect</button>
+      <button class="ghost" id="cfgCancel">Close</button>
+      <button class="primary" id="cfgSave">Connect &amp; Load</button>
+    </div>
+  </div>
+</div>
+<div id="toast" class="toast"></div>
+
+<!-- Modal -->
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <h2 id="modalTitle">Add State Entry</h2>
+    <p class="hint">Fields save to this dashboard. Export to Excel afterward to sync with your master sheet.</p>
+    <div id="modalBody"></div>
+    <div class="modal-actions">
+      <button class="ghost" id="btnCancel">Cancel</button>
+      <button class="primary" id="btnSave">Save Entry</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SEED = {"states": [{"sr": 1, "state": "Andaman & Nicobar", "category": "Transport", "backend": "NIC", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 1, "primary_ip": "vlts.and.nic.in", "port": 9031, "emergency_ip": "vlts.and.nic.in", "port2": 9032, "url": "https://vlts.and.nic.in/Login.aspx", "alt_ips": ["Primary(alt): 164.100.64.240", "Emergency(alt): 164.100.64.240"]}, {"sr": 2, "state": "Andhra Pradesh", "category": "Transport", "backend": "NIC", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 1, "primary_ip": "commonlayer.parivahan.gov.in", "port": 9031, "emergency_ip": "commonlayer.parivahan.gov.in", "port2": 9032, "url": "https://www.vltsecurity.com/", "alt_ips": []}, {"sr": 3, "state": "Arunchal Pradesh", "category": "Transport", "backend": "NIC", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 1, "primary_ip": "commonlayer.parivahan.gov.in", "port": 9031, "emergency_ip": "commonlayer.parivahan.gov.in", "port2": 9032, "url": "https://www.vltsecurity.com/", "alt_ips": []}, {"sr": 4, "state": "Assam", "category": "Transport", "backend": "NIC", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 1, "primary_ip": "commonlayer.parivahan.gov.in", "port": 9031, "emergency_ip": "commonlayer.parivahan.gov.in", "port2": 9032, "url": "https://www.vltsecurity.com/", "alt_ips": []}, {"sr": 5, "state": "Bihar", "category": "Transport", "backend": "NIC", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 1, "primary_ip": "brvlts.parivahan.gov.in", "port": 9031, "emergency_ip": "brvlts.parivahan.gov.in", "port2": 9032, "url": "https://brvlts.parivahan.gov.in/Login.aspx", "alt_ips": ["Primary(alt): 164.100.64.230", "Emergency(alt): 164.100.64.230"]}, {"sr": 6, "state": "Bihar", "category": "Mining", "backend": "NIC_Khanansoft", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 1, "primary_ip": "vlts.bihar.gov.in", "port": 9999, "emergency_ip": null, "port2": null, "url": "https://khanansoft.bihar.gov.in/GPSPortal/Login", "alt_ips": []}, {"sr": 7, "state": "Chhattisgarh", "category": "Transport", "backend": "Digitaaztrans/BSNL", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 3, "primary_ip": "164.100.64.209", "port": 6001, "emergency_ip": null, "port2": null, "url": "https://cgvts.cgstate.gov.in/#/login", "alt_ips": []}, {"sr": 8, "state": "Chandigarh", "category": "Transport", "backend": "NIC", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 1, "primary_ip": "vltspvt.chd.gov.in", "port": 9031, "emergency_ip": "vltsemg.chd.gov.in", "port2": 9032, "url": "https://vlts.chd.gov.in/Login.aspx", "alt_ips": ["Primary(alt): 164.100.64.220", "Emergency(alt): 164.100.64.231"]}, {"sr": 9, "state": "Delhi", "category": "Transport", "backend": "NIC", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 1, "primary_ip": "vltspvt.delhi.gov.in", "port": 9031, "emergency_ip": "vltsemg.delhi.gov.in", "port2": 9032, "url": "https://vlts.delhi.gov.in/login", "alt_ips": ["Primary(alt): 164.100.64.197", "Emergency(alt): 164.100.64.196"]}, {"sr": 10, "state": "Gujurat", "category": "Transport", "backend": "NIC", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 1, "primary_ip": "commonlayer.parivahan.gov.in", "port": 9031, "emergency_ip": "commonlayer.parivahan.gov.in", "port2": 9032, "url": null, "alt_ips": []}, {"sr": 11, "state": "Gujurat", "category": "GPCB", "backend": "NIC", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 1, "primary_ip": "103.234.162.31", "port": 9999, "emergency_ip": null, "port2": null, "url": "https://gpcbvlts.gujarat.gov.in/en/Index/CheckVLTDStatus", "alt_ips": []}, {"sr": 12, "state": "Gujurat", "category": "Mining", "backend": "CGM_Amnex", "vendor_2g": "WTEX", "vendor_4g": "WTEX", "mode": 7, "primary_ip": "103.234.162.150", "port": 5012, "emergency_ip": null, "port2": null, "url": "https://vtmscgm.gujarat.gov.in/", "alt_ips": []}, {"sr": 13, "state": "Gujurat", "category": "GGL", "backend": "Project", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 1, "primary_ip": "14.99.197.210", "port": 4444, "emergency_ip": null, "port2": null, "url": "https://gglvts.nyggs.com", "alt_ips": []}, {"sr": 14, "state": "Goa", "category": "Transport", "backend": "Transport", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 1, "primary_ip": "gavltspvt.goa.gov.in", "port": 9031, "emergency_ip": "gavltsemg.goa.gov.in", "port2": 9032, "url": "https://gavlts.goa.gov.in/AIS140/login", "alt_ips": ["Primary(alt): 164.100.64.226", "Emergency(alt): 164.100.64.247"]}, {"sr": 15, "state": "Haryana", "category": "Transport", "backend": "NIC", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 1, "primary_ip": "commonlayer.parivahan.gov.in", "port": 9031, "emergency_ip": "commonlayer.parivahan.gov.in", "port2": 9032, "url": "https://www.vltsecurity.com/", "alt_ips": []}, {"sr": 16, "state": "Haryana", "category": "FCI", "backend": "FleetRobo", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 1, "primary_ip": "65.1.245.72", "port": 7884, "emergency_ip": "SIP/SPT : fcivlts.in", "port2": 9999, "url": "https://haryanafood.mapmyindia.com/nextgen/#/login", "alt_ips": []}, {"sr": 17, "state": "Himachal Pradesh", "category": "Transport", "backend": "CDAC", "vendor_2g": "WTEX", "vendor_4g": null, "mode": null, "primary_ip": "103.195.218.77", "port": null, "emergency_ip": "Not Empanelled", "port2": null, "url": null, "alt_ips": []}, {"sr": 18, "state": "Jharkhand", "category": "Transport", "backend": "NIC", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 1, "primary_ip": "commonlayer.parivahan.gov.in", "port": 9031, "emergency_ip": "commonlayer.parivahan.gov.in", "port2": 9032, "url": null, "alt_ips": []}, {"sr": 19, "state": "Jharkhand", "category": "Mining", "backend": "Intelliplanner", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 1, "primary_ip": "103.97.108.68", "port": 5124, "emergency_ip": null, "port2": null, "url": "https://vtsregistration.jharkhand.gov.in/", "alt_ips": []}, {"sr": 20, "state": "Jammu Kashmir", "category": "Transport", "backend": "NIC/BSNL", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 3, "primary_ip": "device.vltsecurity.com", "port": 2047, "emergency_ip": "emergency.vltsecurity.com", "port2": 1090, "url": "https://www.vltsecurity.com/", "alt_ips": []}, {"sr": 21, "state": "Jammu Kashmir", "category": "FCI", "backend": "NIC", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 1, "primary_ip": "fcivlts.in", "port": 9999, "emergency_ip": "fcivlts.in", "port2": 9999, "url": "https://fcivlts.in/", "alt_ips": []}, {"sr": 22, "state": "Karnataka", "category": "Mining", "backend": null, "vendor_2g": "WTEX", "vendor_4g": null, "mode": null, "primary_ip": "103.138.197.90", "port": 9092, "emergency_ip": "103.138.197.90", "port2": 9093, "url": null, "alt_ips": []}, {"sr": 23, "state": "Karnataka", "category": "Transport", "backend": "CDAC", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 13, "primary_ip": "210.212.237.164", "port": 8085, "emergency_ip": "210.212.237.164", "port2": 8085, "url": "https://khdvts.nyggs.com/", "alt_ips": []}, {"sr": 24, "state": "Karnataka Health", "category": null, "backend": "Project", "vendor_2g": "WATSOO", "vendor_4g": null, "mode": 0, "primary_ip": "PU:http://14.99.197.210:4043/api/reports/push/data", "port": "SIP/SPT -", "emergency_ip": "14.99.197.210", "port2": 3333, "url": null, "alt_ips": []}, {"sr": 25, "state": "Maharashtra", "category": "Transport", "backend": "Vahan Shakti", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 8, "primary_ip": "data.vahanshakti.in", "port": 4030, "emergency_ip": "data.vahanshakti.in", "port2": 4040, "url": "https://vahanshakti.in/", "alt_ips": []}, {"sr": 26, "state": "Maharashtra", "category": null, "backend": null, "vendor_2g": null, "vendor_4g": null, "mode": null, "primary_ip": "103.91.244.23", "port": null, "emergency_ip": "103.91.244.23", "port2": null, "url": null, "alt_ips": []}, {"sr": 27, "state": "Maharashtra", "category": "Mining", "backend": "Shaurya Technosoft", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 3, "primary_ip": "43.205.159.137", "port": 17005, "emergency_ip": null, "port2": null, "url": "https://mahakhanij.maharashtra.gov.in/login.aspx", "alt_ips": []}, {"sr": 28, "state": "Maharashtra", "category": "Mining", "backend": "GNFC_Amnex", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 3, "primary_ip": "103.20.104.147", "port": 7173, "emergency_ip": null, "port2": null, "url": "https://khanija-maha.ncode.in/DGM_ILMS/Login.aspx", "alt_ips": []}, {"sr": 29, "state": "Meghalaya", "category": "Transport", "backend": "CDAC", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 5, "primary_ip": "210.212.237.164", "port": 80, "emergency_ip": "PU:http://210.212.237.164/", "port2": 8080, "url": "https://ml.surakshamitr.org/", "alt_ips": []}, {"sr": 30, "state": "Mizoram", "category": "Transport", "backend": "NIC", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 1, "primary_ip": "vltspvt.mizoram.nic.in", "port": 9031, "emergency_ip": "vltsemg.mizoram.nic.in", "port2": 9032, "url": null, "alt_ips": []}, {"sr": 31, "state": "Madhya Pradesh", "category": "Transport", "backend": "BSNL", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 3, "primary_ip": "mpdevice.vltsecurity.com", "port": 8123, "emergency_ip": "emergency.vltsecurity.com", "port2": 8124, "url": "https://mp.vltsecurity.com/#/", "alt_ips": []}, {"sr": 32, "state": "Madhya Pradesh", "category": "FCI", "backend": "NIC", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 1, "primary_ip": "fcivlts.in", "port": 9999, "emergency_ip": "fcivlts.in", "port2": 9999, "url": "https://fcivlts.in/", "alt_ips": []}, {"sr": 33, "state": "Nagaland", "category": "Transport", "backend": "NIC", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 1, "primary_ip": "commonlayer.parivahan.gov.in", "port": 9031, "emergency_ip": "commonlayer.parivahan.gov.in", "port2": 9032, "url": "https://www.vltsecurity.com/", "alt_ips": []}, {"sr": 34, "state": "Odisha", "category": "Transport", "backend": "Conginix/BSNL", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 4, "primary_ip": "164.100.64.216", "port": 8216, "emergency_ip": "164.100.64.215", "port2": 9202, "url": "https://vltdcp.odishatransport.gov.in/", "alt_ips": []}, {"sr": 35, "state": "Pondicherry", "category": "Transport", "backend": "Bloom", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 6, "primary_ip": "103.195.217.191 (New)", "port": 9201, "emergency_ip": "164.100.64.227 (Old)", "port2": 9201, "url": "https://mc.py.gov.in/", "alt_ips": []}, {"sr": 36, "state": "Punjab", "category": "Transport", "backend": "NIC", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 1, "primary_ip": "commonlayer.parivahan.gov.in", "port": 9031, "emergency_ip": "commonlayer.parivahan.gov.in", "port2": 9032, "url": "https://www.vltsecurity.com/", "alt_ips": []}, {"sr": 37, "state": "Punjab", "category": "Mining", "backend": "OWN API", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 0, "primary_ip": "14.99.197.210", "port": 5666, "emergency_ip": null, "port2": null, "url": "https://minesandgeology.punjab.gov.in/stone/index.php", "alt_ips": []}, {"sr": 38, "state": "Rajasthan", "category": "Transport", "backend": "NIC", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 1, "primary_ip": "vltspvt.rajasthan.gov.in", "port": 9031, "emergency_ip": "vltsemg.rajasthan.gov.in", "port2": 9032, "url": "https://www.vlts.rajasthan.gov.in/login", "alt_ips": []}, {"sr": 39, "state": "Rajasthan", "category": "Mining", "backend": "CSM", "vendor_2g": "WTEX", "vendor_4g": "WTEX", "mode": 11, "primary_ip": "track.rajvts.com", "port": 7001, "emergency_ip": null, "port2": null, "url": "https://minesportal.rajasthan.gov.in/#/login", "alt_ips": []}, {"sr": 40, "state": "Rajasthan", "category": "FCI", "backend": "NIC", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 1, "primary_ip": "fcivlts.in", "port": 9999, "emergency_ip": "fcivlts.in", "port2": 9999, "url": "https://fcivlts.in/", "alt_ips": []}, {"sr": 41, "state": "Sikkim", "category": "Transport", "backend": "Keletron", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 0, "primary_ip": "lstsk.vahanmitra.org", "port": 5400, "emergency_ip": "lstsk.vahanmitra.org", "port2": 9249, "url": "https://sk.vahanmitra.org/", "alt_ips": []}, {"sr": 42, "state": "Tamil Nadu", "category": "Transport", "backend": "CDAC", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 13, "primary_ip": "stavltsgw.tn.gov.in", "port": 8080, "emergency_ip": "stavltsgw.tn.gov.in", "port2": 8080, "url": null, "alt_ips": []}, {"sr": 43, "state": "Tamil Nadu", "category": "Mining", "backend": "Xenovex", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 0, "primary_ip": null, "port": null, "emergency_ip": null, "port2": null, "url": null, "alt_ips": []}, {"sr": 44, "state": "Tamil Nadu", "category": "TASMAC", "backend": null, "vendor_2g": "WTEX", "vendor_4g": null, "mode": 0, "primary_ip": "36.255.16.108", "port": 8224, "emergency_ip": null, "port2": null, "url": null, "alt_ips": []}, {"sr": 45, "state": "Telangana", "category": "Transport", "backend": "NIC", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 1, "primary_ip": "commonlayer.parivahan.gov.in", "port": 9031, "emergency_ip": "commonlayer.parivahan.gov.in", "port2": 9032, "url": null, "alt_ips": []}, {"sr": 46, "state": "Telangana", "category": "Mining", "backend": "TGMT-Online (OWN API)", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 0, "primary_ip": "14.99.197.210", "port": 5666, "emergency_ip": null, "port2": null, "url": null, "alt_ips": []}, {"sr": 47, "state": "Tripura", "category": "Transport", "backend": "Keletron", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 0, "primary_ip": "lsttr.vahanmitra.org", "port": 5200, "emergency_ip": "lsttr.vahanmitra.org", "port2": 9049, "url": "https://tr.vahanmitra.org/", "alt_ips": []}, {"sr": 48, "state": "Uttar Pradesh", "category": "Transport", "backend": "NIC", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 1, "primary_ip": "vltspvt.up.gov.in", "port": 9031, "emergency_ip": "vltsemg.up.gov.in", "port2": 9032, "url": "https://vlts.up.gov.in/login", "alt_ips": []}, {"sr": 49, "state": "Uttar Pradesh", "category": "Mining", "backend": "MARGSOFT", "vendor_2g": "WTEX", "vendor_4g": "PT4G", "mode": 12, "primary_ip": "154.210.168.75", "port": 4003, "emergency_ip": null, "port2": null, "url": "https://registration.vtsdgm.up.in/vendor-login", "alt_ips": []}, {"sr": 50, "state": "Uttar Pradesh", "category": "UPSRTC", "backend": "NEC Corporation India", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 1, "primary_ip": "gps.upsrtcvlt.com", "port": 65432, "emergency_ip": null, "port2": null, "url": "https://margdarshi.upsrtcvlt.com/", "alt_ips": ["Primary(alt): 103.97.108.68"]}, {"sr": 51, "state": "Uttrakhand", "category": "Transport", "backend": "NIC", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 1, "primary_ip": "vlt.uk.gov.in", "port": 9999, "emergency_ip": "vlt.uk.gov.in", "port2": 9999, "url": "https://vlt.uk.gov.in/", "alt_ips": ["Primary(alt): 103.116.27.26", "Emergency(alt): 103.116.27.26"]}, {"sr": 52, "state": "West Bengal", "category": "Transport", "backend": "Webel", "vendor_2g": "WTEX", "vendor_4g": "PT4G", "mode": 0, "primary_ip": "vltsgw.wb.gov.in", "port": 8865, "emergency_ip": "vltsgw.wb.gov.in", "port2": 5688, "url": "https://vlts.wb.gov.in/#/login", "alt_ips": []}, {"sr": 53, "state": "West Bengal", "category": "FCI Paddy", "backend": "Transglobal", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 0, "primary_ip": "14.99.197.210", "port": 8800, "emergency_ip": null, "port2": null, "url": "https://vltsfs.wb.gov.in/", "alt_ips": []}], "clients": [{"sr": 1, "name": "Blackbuck", "primary_ip": "3.6.243.35", "port": 10109.0, "other_ip": null, "port2": null, "url": null}, {"sr": 2, "name": "WheelsEYE", "primary_ip": "65.1.190.236", "port": 9614.0, "other_ip": null, "port2": null, "url": null}, {"sr": 3, "name": "FleetX", "primary_ip": "13.126.49.12", "port": 4444.0, "other_ip": null, "port2": null, "url": null}, {"sr": 4, "name": "EEMOT", "primary_ip": "139.59.48.202", "port": 5179.0, "other_ip": null, "port2": null, "url": null}, {"sr": 5, "name": "SMB Tracker", "primary_ip": "52.74.44.145", "port": 8600.0, "other_ip": null, "port2": null, "url": null}, {"sr": 6, "name": "Geosafe", "primary_ip": "104.236.101.21", "port": 5179.0, "other_ip": "139.59.16.108", "port2": 5179.0, "url": null}, {"sr": 7, "name": "ANS IT Solutions", "primary_ip": "13.127.228.11", "port": 5285.0, "other_ip": null, "port2": null, "url": null}, {"sr": 8, "name": "TureTrack", "primary_ip": "ais.truetrackgps.in", "port": 5090.0, "other_ip": null, "port2": null, "url": null}, {"sr": 9, "name": "GPS Desk", "primary_ip": "13.127.96.143", "port": 5285.0, "other_ip": null, "port2": null, "url": null}, {"sr": 10, "name": "Tracknovate", "primary_ip": "13.234.242.1", "port": 5946.0, "other_ip": null, "port2": null, "url": null}, {"sr": 11, "name": "Vihana Telematcis", "primary_ip": "139.59.48.202", "port": 5179.0, "other_ip": null, "port2": null, "url": null}, {"sr": 12, "name": "Indtrack Technology Pvt Ltd", "primary_ip": "216.48.191.56", "port": 2044.0, "other_ip": null, "port2": null, "url": null}, {"sr": 13, "name": "Zenon Technologies", "primary_ip": "139.59.48.202", "port": 5179.0, "other_ip": null, "port2": null, "url": null}, {"sr": 14, "name": "Jtrack (Tracking Gadget)", "primary_ip": "207.180.241.76", "port": 5179.0, "other_ip": null, "port2": null, "url": null}, {"sr": 15, "name": "Mbind", "primary_ip": "34.27.213.140", "port": 6179.0, "other_ip": null, "port2": null, "url": null}, {"sr": 16, "name": "Yatis Telematics", "primary_ip": "103.138.197.90", "port": 9093.0, "other_ip": null, "port2": null, "url": null}, {"sr": 17, "name": "Ramvitha", "primary_ip": "103.138.197.90", "port": 8080.0, "other_ip": null, "port2": null, "url": null}, {"sr": 18, "name": "Aksa", "primary_ip": "13.126.36.205", "port": 1176.0, "other_ip": null, "port2": null, "url": null}, {"sr": 19, "name": "Gtrophy", "primary_ip": "devices.thelocate.in", "port": 4030.0, "other_ip": null, "port2": null, "url": null}, {"sr": 20, "name": "Aditi Tracking_Goa", "primary_ip": "3.7.238.246", "port": 5946.0, "other_ip": null, "port2": null, "url": null}, {"sr": 21, "name": "Aditi Tracking_MH", "primary_ip": "13.126.244.90", "port": 5946.0, "other_ip": null, "port2": null, "url": null}]};
+
+const STORAGE_KEY = 'vlts_dashboard_data_v1';
+let db = null;
+let currentTab = 'states';
+let activeCategory = null;
+let editingIndex = null; // index within db[currentTab] when editing
+
+function loadDB(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    // NOTE: artifact storage restriction — use in-memory fallback if unavailable
+    if(raw) return JSON.parse(raw);
+  }catch(e){}
+  return JSON.parse(JSON.stringify(SEED));
+}
+function saveDB(){
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(db)); }catch(e){}
+  schedulePush(); // no-op unless a Google Sheet is connected
+}
+// In this sandboxed environment localStorage may not persist; keep an in-memory mirror too.
+db = (function(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw) return JSON.parse(raw);
+  }catch(e){}
+  return JSON.parse(JSON.stringify(SEED));
+})();
+
+function catClass(cat){
+  if(!cat) return 'cat-other';
+  const key = cat.replace(/[^A-Za-z]/g,'');
+  if(['Transport','Mining','FCI'].includes(key)) return 'cat-'+key;
+  if(key === 'FCIPaddy') return 'cat-FCI';
+  return 'cat-other';
+}
+
+function renderStats(){
+  const states = db.states;
+  const clients = db.clients;
+  const stateCount = new Set(states.map(s=>s.state).filter(Boolean)).size;
+  const catCount = new Set(states.map(s=>s.category).filter(Boolean)).size;
+  const nodeCount = states.length;
+  const clientCount = clients.length;
+  const missingUrl = states.filter(s=>!s.url).length;
+  const stats = [
+    {n: stateCount, l:'States / UTs'},
+    {n: nodeCount, l:'Server Entries'},
+    {n: catCount, l:'Categories'},
+    {n: clientCount, l:'Client Integrations'},
+    {n: missingUrl, l:'Missing Login URL'},
+  ];
+  document.getElementById('stats').innerHTML = stats.map(s=>`
+    <div class="stat"><div class="n">${s.n}</div><div class="l">${s.l}</div></div>
+  `).join('');
+}
+
+function renderCatChips(){
+  const wrap = document.getElementById('catChips');
+  if(currentTab !== 'states'){ wrap.innerHTML=''; return; }
+  const cats = [...new Set(db.states.map(s=>s.category).filter(Boolean))].sort();
+  wrap.innerHTML = ['All', ...cats].map(c=>{
+    const isActive = (c==='All' && !activeCategory) || c===activeCategory;
+    return `<div class="chip ${isActive?'active':''}" data-cat="${c==='All'?'':c}">${c}</div>`;
+  }).join('');
+  wrap.querySelectorAll('.chip').forEach(el=>{
+    el.onclick = ()=>{ activeCategory = el.dataset.cat || null; renderCatChips(); renderTable(); };
+  });
+}
+
+function fmtPort(p){ return (p===null||p===undefined||p==='') ? '' : p; }
+
+function renderTable(){
+  const thead = document.getElementById('thead');
+  const tbody = document.getElementById('tbody');
+  const q = document.getElementById('searchInput').value.trim().toLowerCase();
+
+  if(currentTab === 'states'){
+    thead.innerHTML = `<tr>
+      <th>#</th><th>State / UT</th><th>Category</th><th>Backend</th><th>Vendor</th>
+      <th>Primary IP / URL</th><th>Port</th><th>Emergency IP</th><th>Port</th><th>Login URL</th>
+    </tr>`;
+    let rows = db.states.filter(r=>{
+      if(activeCategory && r.category !== activeCategory) return false;
+      if(!q) return true;
+      const hay = [r.state,r.category,r.backend,r.primary_ip,r.emergency_ip,r.url,r.vendor_2g,r.vendor_4g].join(' ').toLowerCase();
+      return hay.includes(q);
+    });
+    if(rows.length===0){
+      tbody.innerHTML = `<tr><td colspan="10"><div class="empty">No matching entries. Try a different search or filter.</div></td></tr>`;
+      return;
+    }
+    tbody.innerHTML = rows.map((r)=>{
+      const realIndex = db.states.indexOf(r);
+      const vendor = [r.vendor_2g, r.vendor_4g].filter(Boolean).join(' / ') || '—';
+      const altPrimary = (r.alt_ips||[]).filter(a=>a.startsWith('Primary')).map(a=>`<span class="alt">${a}</span>`).join('');
+      const altEmergency = (r.alt_ips||[]).filter(a=>a.startsWith('Emergency')).map(a=>`<span class="alt">${a}</span>`).join('');
+      return `<tr class="${r._userAdded?'userAdded':''}">
+        <td class="mono sub">${r.sr ?? '—'}</td>
+        <td class="state-name">${r.state ?? '—'}<div class="sub">${r.mode!==null&&r.mode!==undefined? 'Mode '+r.mode : ''}</div></td>
+        <td><span class="cat-badge ${catClass(r.category)}">${r.category ?? '—'}</span></td>
+        <td>${r.backend ?? '—'}</td>
+        <td class="mono sub">${vendor}</td>
+        <td class="mono">${r.primary_ip ?? '—'}${altPrimary}</td>
+        <td class="mono sub">${r.port ?? '—'}</td>
+        <td class="mono">${r.emergency_ip ?? '—'}${altEmergency}</td>
+        <td class="mono sub">${r.port2 ?? '—'}</td>
+        <td>${r.url? `<a class="link-btn" href="${r.url}" target="_blank" rel="noopener">Open ↗</a>` : '<span class="sub">—</span>'}</td>
+      </tr>`;
+    }).join('');
+  } else {
+    thead.innerHTML = `<tr>
+      <th>#</th><th>Client</th><th>Primary IP</th><th>Port</th>
+    </tr>`;
+    let rows = db.clients.filter(r=>{
+      if(!q) return true;
+      const hay = [r.name,r.primary_ip].join(' ').toLowerCase();
+      return hay.includes(q);
+    });
+    if(rows.length===0){
+      tbody.innerHTML = `<tr><td colspan="4"><div class="empty">No matching entries.</div></td></tr>`;
+      return;
+    }
+    tbody.innerHTML = rows.map((r)=>{
+      const realIndex = db.clients.indexOf(r);
+      return `<tr class="${r._userAdded?'userAdded':''}">
+        <td class="mono sub">${r.sr ?? '—'}</td>
+        <td class="state-name">${r.name}</td>
+        <td class="mono">${r.primary_ip ?? '—'}</td>
+        <td class="mono sub">${r.port ?? '—'}</td>
+      </tr>`;
+    }).join('');
+  }
+}
+
+function refreshAll(){ renderStats(); renderCatChips(); renderTable(); }
+
+document.querySelectorAll('.tab').forEach(t=>{
+  t.onclick = ()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    currentTab = t.dataset.tab;
+    activeCategory = null;
+    refreshAll();
+  };
+});
+document.getElementById('searchInput').addEventListener('input', renderTable);
+
+// ---- Modal / Add / Edit ----
+const overlay = document.getElementById('overlay');
+const modalBody = document.getElementById('modalBody');
+const modalTitle = document.getElementById('modalTitle');
+
+function altValue(v, prefix){
+  const item = (v.alt_ips||[]).find(a=>a.startsWith(prefix));
+  if(!item) return '';
+  const idx = item.indexOf(':');
+  return idx>-1 ? item.slice(idx+1).trim() : '';
+}
+function fieldsForStates(v={}){
+  return `
+    <div class="grid2">
+      <div class="field"><label>State / UT</label><input id="f_state" value="${v.state??''}"></div>
+      <div class="field"><label>Category</label><input id="f_category" value="${v.category??''}" placeholder="Transport / Mining / FCI..."></div>
+    </div>
+    <div class="grid2">
+      <div class="field"><label>Backend</label><input id="f_backend" value="${v.backend??''}"></div>
+      <div class="field"><label>Vendor (2G / 4G)</label><input id="f_vendor" value="${[v.vendor_2g,v.vendor_4g].filter(Boolean).join(', ')}"></div>
+    </div>
+    <div class="grid2">
+      <div class="field"><label>Primary IP / Host</label><input id="f_primary" value="${v.primary_ip??''}"></div>
+      <div class="field"><label>Port</label><input id="f_port" value="${v.port??''}"></div>
+    </div>
+    <div class="field"><label>Primary IP (Alt)</label><input id="f_primary_alt" value="${altValue(v,'Primary(alt)')}" placeholder="Optional backup IP"></div>
+    <div class="grid2">
+      <div class="field"><label>Emergency IP / Host</label><input id="f_emergency" value="${v.emergency_ip??''}"></div>
+      <div class="field"><label>Port</label><input id="f_port2" value="${v.port2??''}"></div>
+    </div>
+    <div class="field"><label>Emergency IP (Alt)</label><input id="f_emergency_alt" value="${altValue(v,'Emergency(alt)')}" placeholder="Optional backup IP"></div>
+    <div class="field"><label>Login URL</label><input id="f_url" value="${v.url??''}" placeholder="https://..."></div>
+  `;
+}
+function fieldsForClients(v={}){
+  return `
+    <div class="field"><label>Client Name</label><input id="f_name" value="${v.name??''}"></div>
+    <div class="grid2">
+      <div class="field"><label>Primary IP</label><input id="f_primary" value="${v.primary_ip??''}"></div>
+      <div class="field"><label>Port</label><input id="f_port" value="${v.port??''}"></div>
+    </div>
+  `;
+}
+
+document.getElementById('btnAdd').onclick = ()=>{
+  editingIndex = null;
+  modalTitle.textContent = currentTab==='states' ? 'Add State Entry' : 'Add Client Entry';
+  modalBody.innerHTML = currentTab==='states' ? fieldsForStates() : fieldsForClients();
+  overlay.classList.add('show');
+};
+document.getElementById('btnCancel').onclick = ()=> overlay.classList.remove('show');
+overlay.addEventListener('click', (e)=>{ if(e.target===overlay) overlay.classList.remove('show'); });
+
+window.editEntry = function(tab, index){
+  currentTab = tab;
+  document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active', x.dataset.tab===tab));
+  editingIndex = index;
+  const v = db[tab][index];
+  modalTitle.textContent = 'Edit Entry';
+  modalBody.innerHTML = tab==='states' ? fieldsForStates(v) : fieldsForClients(v);
+  overlay.classList.add('show');
+};
+
+window.deleteEntry = function(tab, index){
+  if(!confirm('Delete this entry?')) return;
+  db[tab].splice(index,1);
+  saveDB();
+  refreshAll();
+};
+
+document.getElementById('btnSave').onclick = ()=>{
+  if(currentTab==='states'){
+    const vendorRaw = document.getElementById('f_vendor').value.split(',').map(s=>s.trim()).filter(Boolean);
+    const entry = {
+      sr: editingIndex!==null ? db.states[editingIndex].sr : (Math.max(0,...db.states.map(s=>s.sr||0))+1),
+      state: document.getElementById('f_state').value.trim() || null,
+      category: document.getElementById('f_category').value.trim() || null,
+      backend: document.getElementById('f_backend').value.trim() || null,
+      vendor_2g: vendorRaw[0] || null,
+      vendor_4g: vendorRaw[1] || null,
+      mode: editingIndex!==null ? db.states[editingIndex].mode : null,
+      primary_ip: document.getElementById('f_primary').value.trim() || null,
+      port: document.getElementById('f_port').value.trim() || null,
+      emergency_ip: document.getElementById('f_emergency').value.trim() || null,
+      port2: document.getElementById('f_port2').value.trim() || null,
+      url: document.getElementById('f_url').value.trim() || null,
+      alt_ips: (function(){
+        const alts = [];
+        const pa = document.getElementById('f_primary_alt').value.trim();
+        const ea = document.getElementById('f_emergency_alt').value.trim();
+        if(pa) alts.push('Primary(alt): '+pa);
+        if(ea) alts.push('Emergency(alt): '+ea);
+        return alts;
+      })(),
+      _userAdded: editingIndex!==null ? db.states[editingIndex]._userAdded : true
+    };
+    if(editingIndex!==null) db.states[editingIndex] = entry;
+    else db.states.push(entry);
+  } else {
+    const old = editingIndex!==null ? db.clients[editingIndex] : {};
+    // keep hidden fields (Other IP / Port / Url) so they are not wiped from the sheet on save
+    const entry = Object.assign({}, old, {
+      sr: editingIndex!==null ? old.sr : (Math.max(0,...db.clients.map(c=>Number(c.sr)||0))+1),
+      name: document.getElementById('f_name').value.trim(),
+      primary_ip: document.getElementById('f_primary').value.trim() || null,
+      port: document.getElementById('f_port').value.trim() || null,
+      _userAdded: editingIndex!==null ? old._userAdded : true
+    });
+    if(editingIndex!==null) db.clients[editingIndex] = entry;
+    else db.clients.push(entry);
+  }
+  saveDB();
+  overlay.classList.remove('show');
+  refreshAll();
+};
+
+// ---- Export to Excel ----
+document.getElementById('btnExport').onclick = ()=>{
+  const stateRows = db.states.map(r=>({
+    'Sr No.': r.sr, 'State/UT': r.state, 'Category': r.category, 'Backend': r.backend,
+    'Vendor ID_2G': r.vendor_2g, 'Vendor ID_4G': r.vendor_4g, 'MODE': r.mode,
+    'Primary IP': r.primary_ip, 'Port': r.port, 'Emergency IP': r.emergency_ip, 'Port.1': r.port2,
+    'Url': r.url, 'Alt IPs': (r.alt_ips||[]).join(' | ')
+  }));
+  const clientRows = db.clients.map(r=>({
+    'IP': r.sr, 'Clinet Name': r.name, 'Primary IP': r.primary_ip, 'Port': r.port,
+    'Other IP': r.other_ip, 'Port.1': r.port2, 'Url': r.url
+  }));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(stateRows), 'State IP');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(clientRows), 'Client IP');
+  XLSX.writeFile(wb, 'VLTS_Server_IP___URL_List_updated.xlsx');
+};
+
+// ---- Import Excel (re-sync from a freshly downloaded sheet) ----
+document.getElementById('btnUpload').onclick = ()=> document.getElementById('fileInput').click();
+document.getElementById('fileInput').addEventListener('change', (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (evt)=>{
+    try{
+      const wb = XLSX.read(evt.target.result, {type:'array'});
+      const stateSheet = wb.Sheets[wb.SheetNames[0]];
+      const clientSheet = wb.Sheets[wb.SheetNames[1]];
+      const stateJson = XLSX.utils.sheet_to_json(stateSheet, {defval:null});
+      const clientJson = XLSX.utils.sheet_to_json(clientSheet, {defval:null});
+      // Rebuild simple (non-grouped) — good enough for re-import of flat data
+      db.states = stateJson.filter(r=>r['State/UT']||r['Category']).map(r=>({
+        sr:r['Sr No.'], state:r['State/UT'], category:r['Category'], backend:r['Backend'],
+        vendor_2g:r['Vendor ID_2G'], vendor_4g:r['Vendor ID_4G'], mode:r['MODE'],
+        primary_ip:r['Primary IP'], port:r['Port'], emergency_ip:r['Emergency IP'], port2:r['Port.1'],
+        url:r['Url'], alt_ips: r['Alt IPs'] ? r['Alt IPs'].split(' | ') : []
+      }));
+      if(isConnected() && !confirm('Google Sheet connected hai — ye file sheet ka data overwrite kar degi. Continue?')) return;
+      db.clients = clientJson.filter(r=>r['Clinet Name']).map(r=>({
+        sr:r['IP'], name:r['Clinet Name'], primary_ip:r['Primary IP'], port:r['Port'],
+        other_ip:r['Other IP'], port2:r['Port.1'], url:r['Url']
+      }));
+      saveDB();
+      refreshAll();
+      alert('Imported successfully from ' + file.name);
+    }catch(err){
+      alert('Could not read this file. Make sure it matches the original sheet structure.');
+      console.error(err);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+});
+
+// ================= GOOGLE SHEET SYNC =================
+// ==SYNC-PURE-START==
+function sStr(v){ const s=(v==null?'':String(v)).trim(); return s===''?null:s; }
+function sNum(v){ const s=sStr(v); if(s===null) return null; return /^-?\d+$/.test(s)? parseInt(s,10): s; }
+function altOf(r,prefix){
+  const it=(r.alt_ips||[]).find(a=>a.startsWith(prefix));
+  if(!it) return '';
+  const i=it.indexOf(':');
+  return i>-1 ? it.slice(i+1).trim() : '';
+}
+// sheet rows (arrays of 12) -> dashboard records. Rows with no Sr No/Category/Backend are alt-IP rows of the record above.
+function parseStates(rows){
+  const out=[]; let cur=null, lastState=null;
+  rows.forEach(r=>{
+    const c=r.map(sStr);
+    if(c.every(x=>x===null)) return;
+    if(c[1]) lastState=c[1];
+    if(c[0]===null && c[2]===null && c[3]===null){
+      if(cur){
+        if(c[7]) cur.alt_ips.push('Primary(alt): '+c[7]);
+        if(c[9]) cur.alt_ips.push('Emergency(alt): '+c[9]);
+      }
+      return;
+    }
+    cur={ sr:sNum(c[0]), state:lastState, category:c[2], backend:c[3], vendor_2g:c[4], vendor_4g:c[5],
+          mode:sNum(c[6]), primary_ip:c[7], port:sNum(c[8]), emergency_ip:c[9], port2:sNum(c[10]), url:c[11], alt_ips:[] };
+    out.push(cur);
+  });
+  return out;
+}
+function buildStateRows(states){
+  const rows=[]; let prev=null;
+  states.forEach(s=>{
+    const showState = s.state && s.state!==prev;
+    rows.push([s.sr??'', showState?s.state:'', s.category??'', s.backend??'', s.vendor_2g??'', s.vendor_4g??'',
+               s.mode??'', s.primary_ip??'', s.port??'', s.emergency_ip??'', s.port2??'', s.url??'']);
+    if(s.state) prev=s.state;
+    const pa=altOf(s,'Primary(alt)'), ea=altOf(s,'Emergency(alt)');
+    if(pa||ea) rows.push(['','','','','','','',pa,'',ea,'','']);
+  });
+  return rows;
+}
+function parseClients(rows){
+  return rows.map(r=>r.map(sStr)).filter(c=>c.some(x=>x!==null)).map(c=>({
+    sr:sNum(c[0]), name:c[1], primary_ip:c[2], port:sNum(c[3]), other_ip:c[4], port2:sNum(c[5]), url:c[6]
+  })).filter(c=>c.name);
+}
+function buildClientRows(clients){
+  return clients.map(c=>[c.sr??'', c.name??'', c.primary_ip??'', c.port??'', c.other_ip??'', c.port2??'', c.url??'']);
+}
+// ==SYNC-PURE-END==
+
+const CFG_KEY='vlts_sync_cfg_v1';
+// Default connection — dashboard khulte hi apne aap connect ho jata hai (Connect Sheet dobara nahi karna padega)
+const DEFAULT_CFG={
+  url:'https://script.google.com/macros/s/AKfycbzif5ny0CuqP3RyYqEhcASpxOdz8C_MVtbgZBF5T6BZrAhgYEJnS3pm4xLa1-AqDU8G/exec',
+  token:'vltsdk2026'
+};
+let cfg=Object.assign({},DEFAULT_CFG);
+try{ const raw=localStorage.getItem(CFG_KEY); if(raw) cfg=JSON.parse(raw); }catch(e){}
+let lastRaw=null, pushTimer=null, pushing=false, pollTimer=null;
+const syncPill=document.getElementById('syncPill');
+const cfgOverlay=document.getElementById('cfgOverlay');
+const cfgMsg=document.getElementById('cfgMsg');
+
+function isConnected(){ return !!(cfg.url && cfg.token); }
+function setStatus(kind,text){ syncPill.className='sync-pill '+kind; syncPill.textContent='● '+text; }
+function toast(msg){
+  const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(toast._t); toast._t=setTimeout(()=>t.classList.remove('show'),4500);
+}
+function updateFooter(){
+  document.getElementById('footerNote').textContent = isConnected()
+    ? 'Connected to Google Sheet · sheet mein edit karein ya yahan — dono taraf ~20 second mein sync ho jata hai'
+    : 'Not connected to Google Sheet — click "Connect Sheet" to turn on live two-way sync';
+}
+async function fetchSheet(){
+  const u=cfg.url+(cfg.url.includes('?')?'&':'?')+'token='+encodeURIComponent(cfg.token)+'&t='+Date.now();
+  const res=await fetch(u);
+  let data;
+  try{ data=await res.json(); }
+  catch(e){ throw new Error('Google se galat jawab aaya — Apps Script mein naya code Save karke Deploy → Manage deployments → Edit → New version karein'); }
+  if(data.error) throw new Error(data.error==='unauthorized' ? 'Token galat hai' : data.error);
+  return data;
+}
+function applyServer(data){
+  db.states=parseStates(data.states);
+  db.clients=parseClients(data.clients);
+  lastRaw=JSON.stringify([data.states,data.clients]);
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(db)); }catch(e){}
+  refreshAll();
+}
+async function pullFromSheet(silent){
+  if(!isConnected()) return true;
+  if(silent && (pushing || pushTimer || overlay.classList.contains('show'))) return true;
+  try{
+    if(!silent) setStatus('busy','Syncing…');
+    const data=await fetchSheet();
+    const raw=JSON.stringify([data.states,data.clients]);
+    if(raw!==lastRaw) applyServer(data);
+    setStatus('live','Live · '+new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}));
+    return true;
+  }catch(e){
+    setStatus('err','Sync error');
+    if(!silent){
+      const why = (e.message==='Failed to fetch') ? 'Google Script tak nahi pahunch paya (Apps Script ko "New version" deploy karein, access "Anyone" rakhein)' : e.message;
+      cfgMsg.textContent='Load nahi hua: '+why;
+      toast('Sheet connect nahi hua: '+why);
+    }
+    return false;
+  }
+}
+function schedulePush(){
+  if(!isConnected()) return;
+  clearTimeout(pushTimer);
+  setStatus('busy','Saving…');
+  pushTimer=setTimeout(pushToSheet,700);
+}
+async function pushToSheet(){
+  pushTimer=null; pushing=true;
+  const states=buildStateRows(db.states);
+  const clients=buildClientRows(db.clients);
+  try{
+    await fetch(cfg.url,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body:JSON.stringify({token:cfg.token,states,clients})});
+    await new Promise(r=>setTimeout(r,1500));
+    const data=await fetchSheet();
+    const norm=rows=>JSON.stringify(rows.map(r=>r.map(v=>String(v==null?'':v))));
+    lastRaw=JSON.stringify([data.states,data.clients]);
+    if(norm(data.states)!==norm(states) || norm(data.clients)!==norm(clients)){
+      setStatus('err','Save not verified');
+      toast('Sheet mein save verify nahi hua — URL/token check karein ya sheet manually dekhein');
+    }else{
+      setStatus('live','Saved · '+new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}));
+    }
+  }catch(e){
+    setStatus('err','Save failed');
+    toast('Sheet mein save nahi hua: '+e.message);
+  }finally{
+    pushing=false;
+  }
+}
+function startPolling(){
+  clearInterval(pollTimer);
+  pollTimer=setInterval(()=>pullFromSheet(true),20000);
+}
+document.addEventListener('visibilitychange',()=>{ if(!document.hidden) pullFromSheet(true); });
+
+document.getElementById('btnConnect').onclick=()=>{
+  document.getElementById('cfgUrl').value=cfg.url||'';
+  document.getElementById('cfgToken').value=cfg.token||'';
+  cfgMsg.textContent='';
+  cfgOverlay.classList.add('show');
+};
+document.getElementById('cfgCancel').onclick=()=>cfgOverlay.classList.remove('show');
+cfgOverlay.addEventListener('click',e=>{ if(e.target===cfgOverlay) cfgOverlay.classList.remove('show'); });
+document.getElementById('cfgSave').onclick=async()=>{
+  const url=document.getElementById('cfgUrl').value.trim();
+  const token=document.getElementById('cfgToken').value.trim();
+  if(!url||!token){ cfgMsg.textContent='URL aur token dono daalein.'; return; }
+  cfg={url,token}; lastRaw=null;
+  cfgMsg.textContent='Connecting…';
+  const ok=await pullFromSheet(false);
+  if(ok){
+    try{ localStorage.setItem(CFG_KEY, JSON.stringify(cfg)); }catch(e){}
+    startPolling(); updateFooter();
+    cfgOverlay.classList.remove('show');
+    toast('Sheet connected — '+db.states.length+' state entries, '+db.clients.length+' clients load hue');
+  }else{
+    cfg={url:'',token:''};
+    setStatus('off','Not connected');
+  }
+};
+document.getElementById('cfgDisconnect').onclick=()=>{
+  cfg={url:'',token:''}; clearInterval(pollTimer);
+  try{ localStorage.removeItem(CFG_KEY); }catch(e){}
+  setStatus('off','Not connected'); updateFooter();
+  cfgOverlay.classList.remove('show');
+};
+
+refreshAll();
+updateFooter();
+if(isConnected()){ pullFromSheet(false); startPolling(); }
+</script>
+</body>
+</html>

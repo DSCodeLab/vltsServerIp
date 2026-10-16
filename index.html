@@ -102,7 +102,9 @@
   .edit-box-btn:hover{border-color:var(--accent);color:var(--accent);}
   td:last-child{overflow:visible;text-align:center;}
   .empty{text-align:center;color:var(--muted);padding:50px 0;font-size:13px;}
-  .userAdded{border-left:3px solid var(--accent);}
+  tbody tr.is-new{background:#FFF4C2;box-shadow:inset 3px 0 0 var(--accent);}
+  tbody tr.is-new:hover{background:#FFEDA3;}
+  .new-badge{display:inline-block;margin-left:6px;padding:1px 6px;border-radius:4px;background:var(--accent);color:#fff;font-size:9.5px;font-weight:800;letter-spacing:.5px;vertical-align:middle;}
 
   .table-wrap{background:var(--panel);border:1px solid var(--border-soft);border-radius:10px;overflow:auto;max-height:62vh;}
 
@@ -144,7 +146,7 @@
     </div>
   </div>
   <div class="actions">
-    <button class="ghost" id="btnConnect">⚙ Connect Sheet</button>
+    <button class="ghost" id="btnConnect" title="Connect &amp; Load" aria-label="Connect &amp; Load" style="font-size:17px;padding:7px 12px;line-height:1;">⟳</button>
     <button class="ghost" id="btnUpload">⇪ Import Excel</button>
     <input type="file" id="fileInput" accept=".xlsx" style="display:none">
     <button class="ghost" id="btnExport">⇩ Export to Excel</button>
@@ -203,7 +205,7 @@
 </div>
 
 <script>
-const SEED = {"states": [{"sr": 1, "state": "Andaman & Nicobar", "category": "Transport", "backend": "NIC", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 1, "primary_ip": "vlts.and.nic.in", "port": 9031, "emergency_ip": "vlts.and.nic.in", "port2": 9032, "url": "https://vlts.and.nic.in/Login.aspx", "alt_ips": ["Primary(alt): 164.100.64.240", "Emergency(alt): 164.100.64.240"]}, {"sr": 2, "state": "Andhra Pradesh", "category": "Transport", "backend": "NIC", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 1, "primary_ip": "commonlayer.parivahan.gov.in", "port": 9031, "emergency_ip": "commonlayer.parivahan.gov.in", "port2": 9032, "url": "https://www.vltsecurity.com/", "alt_ips": []}, {"sr": 3, "state": "Arunchal Pradesh", "category": "Transport", "backend": "NIC", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 1, "primary_ip": "commonlayer.parivahan.gov.in", "port": 9031, "emergency_ip": "commonlayer.parivahan.gov.in", "port2": 9032, "url": "https://www.vltsecurity.com/", "alt_ips": []}, {"sr": 4, "state": "Assam", "category": "Transport", "backend": "NIC", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 1, "primary_ip": "commonlayer.parivahan.gov.in", "port": 9031, "emergency_ip": "commonlayer.parivahan.gov.in", "port2": 9032, "url": "https://www.vltsecurity.com/", "alt_ips": []}, {"sr": 5, "state": "Bihar", "category": "Transport", "backend": "NIC", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 1, "primary_ip": "brvlts.parivahan.gov.in", "port": 9031, "emergency_ip": "brvlts.parivahan.gov.in", "port2": 9032, "url": "https://brvlts.parivahan.gov.in/Login.aspx", "alt_ips": ["Primary(alt): 164.100.64.230", "Emergency(alt): 164.100.64.230"]}, {"sr": 6, "state": "Bihar", "category": "Mining", "backend": "NIC_Khanansoft", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 1, "primary_ip": "vlts.bihar.gov.in", "port": 9999, "emergency_ip": null, "port2": null, "url": "https://khanansoft.bihar.gov.in/GPSPortal/Login", "alt_ips": []}, {"sr": 7, "state": "Chhattisgarh", "category": "Transport", "backend": "Digitaaztrans/BSNL", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 3, "primary_ip": "164.100.64.209", "port": 6001, "emergency_ip": null, "port2": null, "url": "https://cgvts.cgstate.gov.in/#/login", "alt_ips": []}, {"sr": 8, "state": "Chandigarh", "category": "Transport", "backend": "NIC", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 1, "primary_ip": "vltspvt.chd.gov.in", "port": 9031, "emergency_ip": "vltsemg.chd.gov.in", "port2": 9032, "url": "https://vlts.chd.gov.in/Login.aspx", "alt_ips": ["Primary(alt): 164.100.64.220", "Emergency(alt): 164.100.64.231"]}, {"sr": 9, "state": "Delhi", "category": "Transport", "backend": "NIC", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 1, "primary_ip": "vltspvt.delhi.gov.in", "port": 9031, "emergency_ip": "vltsemg.delhi.gov.in", "port2": 9032, "url": "https://vlts.delhi.gov.in/login", "alt_ips": ["Primary(alt): 164.100.64.197", "Emergency(alt): 164.100.64.196"]}, {"sr": 10, "state": "Gujurat", "category": "Transport", "backend": "NIC", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 1, "primary_ip": "commonlayer.parivahan.gov.in", "port": 9031, "emergency_ip": "commonlayer.parivahan.gov.in", "port2": 9032, "url": null, "alt_ips": []}, {"sr": 11, "state": "Gujurat", "category": "GPCB", "backend": "NIC", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 1, "primary_ip": "103.234.162.31", "port": 9999, "emergency_ip": null, "port2": null, "url": "https://gpcbvlts.gujarat.gov.in/en/Index/CheckVLTDStatus", "alt_ips": []}, {"sr": 12, "state": "Gujurat", "category": "Mining", "backend": "CGM_Amnex", "vendor_2g": "WTEX", "vendor_4g": "WTEX", "mode": 7, "primary_ip": "103.234.162.150", "port": 5012, "emergency_ip": null, "port2": null, "url": "https://vtmscgm.gujarat.gov.in/", "alt_ips": []}, {"sr": 13, "state": "Gujurat", "category": "GGL", "backend": "Project", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 1, "primary_ip": "14.99.197.210", "port": 4444, "emergency_ip": null, "port2": null, "url": "https://gglvts.nyggs.com", "alt_ips": []}, {"sr": 14, "state": "Goa", "category": "Transport", "backend": "Transport", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 1, "primary_ip": "gavltspvt.goa.gov.in", "port": 9031, "emergency_ip": "gavltsemg.goa.gov.in", "port2": 9032, "url": "https://gavlts.goa.gov.in/AIS140/login", "alt_ips": ["Primary(alt): 164.100.64.226", "Emergency(alt): 164.100.64.247"]}, {"sr": 15, "state": "Haryana", "category": "Transport", "backend": "NIC", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 1, "primary_ip": "commonlayer.parivahan.gov.in", "port": 9031, "emergency_ip": "commonlayer.parivahan.gov.in", "port2": 9032, "url": "https://www.vltsecurity.com/", "alt_ips": []}, {"sr": 16, "state": "Haryana", "category": "FCI", "backend": "FleetRobo", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 1, "primary_ip": "65.1.245.72", "port": 7884, "emergency_ip": "SIP/SPT : fcivlts.in", "port2": 9999, "url": "https://haryanafood.mapmyindia.com/nextgen/#/login", "alt_ips": []}, {"sr": 17, "state": "Himachal Pradesh", "category": "Transport", "backend": "CDAC", "vendor_2g": "WTEX", "vendor_4g": null, "mode": null, "primary_ip": "103.195.218.77", "port": null, "emergency_ip": "Not Empanelled", "port2": null, "url": null, "alt_ips": []}, {"sr": 18, "state": "Jharkhand", "category": "Transport", "backend": "NIC", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 1, "primary_ip": "commonlayer.parivahan.gov.in", "port": 9031, "emergency_ip": "commonlayer.parivahan.gov.in", "port2": 9032, "url": null, "alt_ips": []}, {"sr": 19, "state": "Jharkhand", "category": "Mining", "backend": "Intelliplanner", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 1, "primary_ip": "103.97.108.68", "port": 5124, "emergency_ip": null, "port2": null, "url": "https://vtsregistration.jharkhand.gov.in/", "alt_ips": []}, {"sr": 20, "state": "Jammu Kashmir", "category": "Transport", "backend": "NIC/BSNL", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 3, "primary_ip": "device.vltsecurity.com", "port": 2047, "emergency_ip": "emergency.vltsecurity.com", "port2": 1090, "url": "https://www.vltsecurity.com/", "alt_ips": []}, {"sr": 21, "state": "Jammu Kashmir", "category": "FCI", "backend": "NIC", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 1, "primary_ip": "fcivlts.in", "port": 9999, "emergency_ip": "fcivlts.in", "port2": 9999, "url": "https://fcivlts.in/", "alt_ips": []}, {"sr": 22, "state": "Karnataka", "category": "Mining", "backend": null, "vendor_2g": "WTEX", "vendor_4g": null, "mode": null, "primary_ip": "103.138.197.90", "port": 9092, "emergency_ip": "103.138.197.90", "port2": 9093, "url": null, "alt_ips": []}, {"sr": 23, "state": "Karnataka", "category": "Transport", "backend": "CDAC", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 13, "primary_ip": "210.212.237.164", "port": 8085, "emergency_ip": "210.212.237.164", "port2": 8085, "url": "https://khdvts.nyggs.com/", "alt_ips": []}, {"sr": 24, "state": "Karnataka Health", "category": null, "backend": "Project", "vendor_2g": "WATSOO", "vendor_4g": null, "mode": 0, "primary_ip": "PU:http://14.99.197.210:4043/api/reports/push/data", "port": "SIP/SPT -", "emergency_ip": "14.99.197.210", "port2": 3333, "url": null, "alt_ips": []}, {"sr": 25, "state": "Maharashtra", "category": "Transport", "backend": "Vahan Shakti", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 8, "primary_ip": "data.vahanshakti.in", "port": 4030, "emergency_ip": "data.vahanshakti.in", "port2": 4040, "url": "https://vahanshakti.in/", "alt_ips": []}, {"sr": 26, "state": "Maharashtra", "category": null, "backend": null, "vendor_2g": null, "vendor_4g": null, "mode": null, "primary_ip": "103.91.244.23", "port": null, "emergency_ip": "103.91.244.23", "port2": null, "url": null, "alt_ips": []}, {"sr": 27, "state": "Maharashtra", "category": "Mining", "backend": "Shaurya Technosoft", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 3, "primary_ip": "43.205.159.137", "port": 17005, "emergency_ip": null, "port2": null, "url": "https://mahakhanij.maharashtra.gov.in/login.aspx", "alt_ips": []}, {"sr": 28, "state": "Maharashtra", "category": "Mining", "backend": "GNFC_Amnex", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 3, "primary_ip": "103.20.104.147", "port": 7173, "emergency_ip": null, "port2": null, "url": "https://khanija-maha.ncode.in/DGM_ILMS/Login.aspx", "alt_ips": []}, {"sr": 29, "state": "Meghalaya", "category": "Transport", "backend": "CDAC", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 5, "primary_ip": "210.212.237.164", "port": 80, "emergency_ip": "PU:http://210.212.237.164/", "port2": 8080, "url": "https://ml.surakshamitr.org/", "alt_ips": []}, {"sr": 30, "state": "Mizoram", "category": "Transport", "backend": "NIC", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 1, "primary_ip": "vltspvt.mizoram.nic.in", "port": 9031, "emergency_ip": "vltsemg.mizoram.nic.in", "port2": 9032, "url": null, "alt_ips": []}, {"sr": 31, "state": "Madhya Pradesh", "category": "Transport", "backend": "BSNL", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 3, "primary_ip": "mpdevice.vltsecurity.com", "port": 8123, "emergency_ip": "emergency.vltsecurity.com", "port2": 8124, "url": "https://mp.vltsecurity.com/#/", "alt_ips": []}, {"sr": 32, "state": "Madhya Pradesh", "category": "FCI", "backend": "NIC", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 1, "primary_ip": "fcivlts.in", "port": 9999, "emergency_ip": "fcivlts.in", "port2": 9999, "url": "https://fcivlts.in/", "alt_ips": []}, {"sr": 33, "state": "Nagaland", "category": "Transport", "backend": "NIC", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 1, "primary_ip": "commonlayer.parivahan.gov.in", "port": 9031, "emergency_ip": "commonlayer.parivahan.gov.in", "port2": 9032, "url": "https://www.vltsecurity.com/", "alt_ips": []}, {"sr": 34, "state": "Odisha", "category": "Transport", "backend": "Conginix/BSNL", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 4, "primary_ip": "164.100.64.216", "port": 8216, "emergency_ip": "164.100.64.215", "port2": 9202, "url": "https://vltdcp.odishatransport.gov.in/", "alt_ips": []}, {"sr": 35, "state": "Pondicherry", "category": "Transport", "backend": "Bloom", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 6, "primary_ip": "103.195.217.191 (New)", "port": 9201, "emergency_ip": "164.100.64.227 (Old)", "port2": 9201, "url": "https://mc.py.gov.in/", "alt_ips": []}, {"sr": 36, "state": "Punjab", "category": "Transport", "backend": "NIC", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 1, "primary_ip": "commonlayer.parivahan.gov.in", "port": 9031, "emergency_ip": "commonlayer.parivahan.gov.in", "port2": 9032, "url": "https://www.vltsecurity.com/", "alt_ips": []}, {"sr": 37, "state": "Punjab", "category": "Mining", "backend": "OWN API", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 0, "primary_ip": "14.99.197.210", "port": 5666, "emergency_ip": null, "port2": null, "url": "https://minesandgeology.punjab.gov.in/stone/index.php", "alt_ips": []}, {"sr": 38, "state": "Rajasthan", "category": "Transport", "backend": "NIC", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 1, "primary_ip": "vltspvt.rajasthan.gov.in", "port": 9031, "emergency_ip": "vltsemg.rajasthan.gov.in", "port2": 9032, "url": "https://www.vlts.rajasthan.gov.in/login", "alt_ips": []}, {"sr": 39, "state": "Rajasthan", "category": "Mining", "backend": "CSM", "vendor_2g": "WTEX", "vendor_4g": "WTEX", "mode": 11, "primary_ip": "track.rajvts.com", "port": 7001, "emergency_ip": null, "port2": null, "url": "https://minesportal.rajasthan.gov.in/#/login", "alt_ips": []}, {"sr": 40, "state": "Rajasthan", "category": "FCI", "backend": "NIC", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 1, "primary_ip": "fcivlts.in", "port": 9999, "emergency_ip": "fcivlts.in", "port2": 9999, "url": "https://fcivlts.in/", "alt_ips": []}, {"sr": 41, "state": "Sikkim", "category": "Transport", "backend": "Keletron", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 0, "primary_ip": "lstsk.vahanmitra.org", "port": 5400, "emergency_ip": "lstsk.vahanmitra.org", "port2": 9249, "url": "https://sk.vahanmitra.org/", "alt_ips": []}, {"sr": 42, "state": "Tamil Nadu", "category": "Transport", "backend": "CDAC", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 13, "primary_ip": "stavltsgw.tn.gov.in", "port": 8080, "emergency_ip": "stavltsgw.tn.gov.in", "port2": 8080, "url": null, "alt_ips": []}, {"sr": 43, "state": "Tamil Nadu", "category": "Mining", "backend": "Xenovex", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 0, "primary_ip": null, "port": null, "emergency_ip": null, "port2": null, "url": null, "alt_ips": []}, {"sr": 44, "state": "Tamil Nadu", "category": "TASMAC", "backend": null, "vendor_2g": "WTEX", "vendor_4g": null, "mode": 0, "primary_ip": "36.255.16.108", "port": 8224, "emergency_ip": null, "port2": null, "url": null, "alt_ips": []}, {"sr": 45, "state": "Telangana", "category": "Transport", "backend": "NIC", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 1, "primary_ip": "commonlayer.parivahan.gov.in", "port": 9031, "emergency_ip": "commonlayer.parivahan.gov.in", "port2": 9032, "url": null, "alt_ips": []}, {"sr": 46, "state": "Telangana", "category": "Mining", "backend": "TGMT-Online (OWN API)", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 0, "primary_ip": "14.99.197.210", "port": 5666, "emergency_ip": null, "port2": null, "url": null, "alt_ips": []}, {"sr": 47, "state": "Tripura", "category": "Transport", "backend": "Keletron", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 0, "primary_ip": "lsttr.vahanmitra.org", "port": 5200, "emergency_ip": "lsttr.vahanmitra.org", "port2": 9049, "url": "https://tr.vahanmitra.org/", "alt_ips": []}, {"sr": 48, "state": "Uttar Pradesh", "category": "Transport", "backend": "NIC", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 1, "primary_ip": "vltspvt.up.gov.in", "port": 9031, "emergency_ip": "vltsemg.up.gov.in", "port2": 9032, "url": "https://vlts.up.gov.in/login", "alt_ips": []}, {"sr": 49, "state": "Uttar Pradesh", "category": "Mining", "backend": "MARGSOFT", "vendor_2g": "WTEX", "vendor_4g": "PT4G", "mode": 12, "primary_ip": "154.210.168.75", "port": 4003, "emergency_ip": null, "port2": null, "url": "https://registration.vtsdgm.up.in/vendor-login", "alt_ips": []}, {"sr": 50, "state": "Uttar Pradesh", "category": "UPSRTC", "backend": "NEC Corporation India", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 1, "primary_ip": "gps.upsrtcvlt.com", "port": 65432, "emergency_ip": null, "port2": null, "url": "https://margdarshi.upsrtcvlt.com/", "alt_ips": ["Primary(alt): 103.97.108.68"]}, {"sr": 51, "state": "Uttrakhand", "category": "Transport", "backend": "NIC", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 1, "primary_ip": "vlt.uk.gov.in", "port": 9999, "emergency_ip": "vlt.uk.gov.in", "port2": 9999, "url": "https://vlt.uk.gov.in/", "alt_ips": ["Primary(alt): 103.116.27.26", "Emergency(alt): 103.116.27.26"]}, {"sr": 52, "state": "West Bengal", "category": "Transport", "backend": "Webel", "vendor_2g": "WTEX", "vendor_4g": "PT4G", "mode": 0, "primary_ip": "vltsgw.wb.gov.in", "port": 8865, "emergency_ip": "vltsgw.wb.gov.in", "port2": 5688, "url": "https://vlts.wb.gov.in/#/login", "alt_ips": []}, {"sr": 53, "state": "West Bengal", "category": "FCI Paddy", "backend": "Transglobal", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 0, "primary_ip": "14.99.197.210", "port": 8800, "emergency_ip": null, "port2": null, "url": "https://vltsfs.wb.gov.in/", "alt_ips": []}], "clients": [{"sr": 1, "name": "Blackbuck", "primary_ip": "3.6.243.35", "port": 10109.0, "other_ip": null, "port2": null, "url": null}, {"sr": 2, "name": "WheelsEYE", "primary_ip": "65.1.190.236", "port": 9614.0, "other_ip": null, "port2": null, "url": null}, {"sr": 3, "name": "FleetX", "primary_ip": "13.126.49.12", "port": 4444.0, "other_ip": null, "port2": null, "url": null}, {"sr": 4, "name": "EEMOT", "primary_ip": "139.59.48.202", "port": 5179.0, "other_ip": null, "port2": null, "url": null}, {"sr": 5, "name": "SMB Tracker", "primary_ip": "52.74.44.145", "port": 8600.0, "other_ip": null, "port2": null, "url": null}, {"sr": 6, "name": "Geosafe", "primary_ip": "104.236.101.21", "port": 5179.0, "other_ip": "139.59.16.108", "port2": 5179.0, "url": null}, {"sr": 7, "name": "ANS IT Solutions", "primary_ip": "13.127.228.11", "port": 5285.0, "other_ip": null, "port2": null, "url": null}, {"sr": 8, "name": "TureTrack", "primary_ip": "ais.truetrackgps.in", "port": 5090.0, "other_ip": null, "port2": null, "url": null}, {"sr": 9, "name": "GPS Desk", "primary_ip": "13.127.96.143", "port": 5285.0, "other_ip": null, "port2": null, "url": null}, {"sr": 10, "name": "Tracknovate", "primary_ip": "13.234.242.1", "port": 5946.0, "other_ip": null, "port2": null, "url": null}, {"sr": 11, "name": "Vihana Telematcis", "primary_ip": "139.59.48.202", "port": 5179.0, "other_ip": null, "port2": null, "url": null}, {"sr": 12, "name": "Indtrack Technology Pvt Ltd", "primary_ip": "216.48.191.56", "port": 2044.0, "other_ip": null, "port2": null, "url": null}, {"sr": 13, "name": "Zenon Technologies", "primary_ip": "139.59.48.202", "port": 5179.0, "other_ip": null, "port2": null, "url": null}, {"sr": 14, "name": "Jtrack (Tracking Gadget)", "primary_ip": "207.180.241.76", "port": 5179.0, "other_ip": null, "port2": null, "url": null}, {"sr": 15, "name": "Mbind", "primary_ip": "34.27.213.140", "port": 6179.0, "other_ip": null, "port2": null, "url": null}, {"sr": 16, "name": "Yatis Telematics", "primary_ip": "103.138.197.90", "port": 9093.0, "other_ip": null, "port2": null, "url": null}, {"sr": 17, "name": "Ramvitha", "primary_ip": "103.138.197.90", "port": 8080.0, "other_ip": null, "port2": null, "url": null}, {"sr": 18, "name": "Aksa", "primary_ip": "13.126.36.205", "port": 1176.0, "other_ip": null, "port2": null, "url": null}, {"sr": 19, "name": "Gtrophy", "primary_ip": "devices.thelocate.in", "port": 4030.0, "other_ip": null, "port2": null, "url": null}, {"sr": 20, "name": "Aditi Tracking_Goa", "primary_ip": "3.7.238.246", "port": 5946.0, "other_ip": null, "port2": null, "url": null}, {"sr": 21, "name": "Aditi Tracking_MH", "primary_ip": "13.126.244.90", "port": 5946.0, "other_ip": null, "port2": null, "url": null}]};
+const SEED = {"states": [{"sr": 1, "state": "Andaman & Nicobar", "category": "Transport", "backend": "NIC", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 1, "primary_ip": "vlts.and.nic.in", "port": 9031, "emergency_ip": "vlts.and.nic.in", "port2": 9032, "url": "https://vlts.and.nic.in/Login.aspx", "alt_ips": ["Primary(alt): 164.100.64.240", "Emergency(alt): 164.100.64.240"]}, {"sr": 2, "state": "Andhra Pradesh", "category": "Transport", "backend": "NIC", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 1, "primary_ip": "commonlayer.parivahan.gov.in", "port": 9031, "emergency_ip": "commonlayer.parivahan.gov.in", "port2": 9032, "url": "https://www.vltsecurity.com/", "alt_ips": []}, {"sr": 3, "state": "Arunchal Pradesh", "category": "Transport", "backend": "NIC", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 1, "primary_ip": "commonlayer.parivahan.gov.in", "port": 9031, "emergency_ip": "commonlayer.parivahan.gov.in", "port2": 9032, "url": "https://www.vltsecurity.com/", "alt_ips": []}, {"sr": 4, "state": "Assam", "category": "Transport", "backend": "NIC", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 1, "primary_ip": "commonlayer.parivahan.gov.in", "port": 9031, "emergency_ip": "commonlayer.parivahan.gov.in", "port2": 9032, "url": "https://www.vltsecurity.com/", "alt_ips": []}, {"sr": 5, "state": "Bihar", "category": "Transport", "backend": "NIC", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 1, "primary_ip": "brvlts.parivahan.gov.in", "port": 9031, "emergency_ip": "brvlts.parivahan.gov.in", "port2": 9032, "url": "https://brvlts.parivahan.gov.in/Login.aspx", "alt_ips": ["Primary(alt): 164.100.64.230", "Emergency(alt): 164.100.64.230"]}, {"sr": 6, "state": "Bihar", "category": "Mining", "backend": "NIC_Khanansoft", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 1, "primary_ip": "vlts.bihar.gov.in", "port": 9999, "emergency_ip": null, "port2": null, "url": "https://khanansoft.bihar.gov.in/GPSPortal/Login", "alt_ips": []}, {"sr": 7, "state": "Chhattisgarh", "category": "Transport", "backend": "Digitaaztrans/BSNL", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 3, "primary_ip": "164.100.64.209", "port": 6001, "emergency_ip": null, "port2": null, "url": "https://cgvts.cgstate.gov.in/#/login", "alt_ips": []}, {"sr": 8, "state": "Chandigarh", "category": "Transport", "backend": "NIC", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 1, "primary_ip": "vltspvt.chd.gov.in", "port": 9031, "emergency_ip": "vltsemg.chd.gov.in", "port2": 9032, "url": "https://vlts.chd.gov.in/Login.aspx", "alt_ips": ["Primary(alt): 164.100.64.220", "Emergency(alt): 164.100.64.231"]}, {"sr": 9, "state": "Delhi", "category": "Transport", "backend": "NIC", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 1, "primary_ip": "vltspvt.delhi.gov.in", "port": 9031, "emergency_ip": "vltsemg.delhi.gov.in", "port2": 9032, "url": "https://vlts.delhi.gov.in/login", "alt_ips": ["Primary(alt): 164.100.64.197", "Emergency(alt): 164.100.64.196"]}, {"sr": 10, "state": "Gujurat", "category": "Transport", "backend": "NIC", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 1, "primary_ip": "commonlayer.parivahan.gov.in", "port": 9031, "emergency_ip": "commonlayer.parivahan.gov.in", "port2": 9032, "url": null, "alt_ips": []}, {"sr": 11, "state": "Gujurat", "category": "GPCB", "backend": "NIC", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 1, "primary_ip": "103.234.162.31", "port": 9999, "emergency_ip": null, "port2": null, "url": "https://gpcbvlts.gujarat.gov.in/en/Index/CheckVLTDStatus", "alt_ips": []}, {"sr": 12, "state": "Gujurat", "category": "Mining", "backend": "CGM_Amnex", "vendor_2g": "WTEX", "vendor_4g": "WTEX", "mode": 7, "primary_ip": "103.234.162.150", "port": 5012, "emergency_ip": null, "port2": null, "url": "https://vtmscgm.gujarat.gov.in/", "alt_ips": []}, {"sr": 13, "state": "Gujurat", "category": "GGL", "backend": "Project", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 1, "primary_ip": "14.99.197.210", "port": 4444, "emergency_ip": null, "port2": null, "url": "https://gglvts.nyggs.com", "alt_ips": []}, {"sr": 14, "state": "Goa", "category": "Transport", "backend": "Transport", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 1, "primary_ip": "gavltspvt.goa.gov.in", "port": 9031, "emergency_ip": "gavltsemg.goa.gov.in", "port2": 9032, "url": "https://gavlts.goa.gov.in/AIS140/login", "alt_ips": ["Primary(alt): 164.100.64.226", "Emergency(alt): 164.100.64.247"]}, {"sr": 15, "state": "Haryana", "category": "Transport", "backend": "NIC", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 1, "primary_ip": "commonlayer.parivahan.gov.in", "port": 9031, "emergency_ip": "commonlayer.parivahan.gov.in", "port2": 9032, "url": "https://www.vltsecurity.com/", "alt_ips": []}, {"sr": 16, "state": "Haryana", "category": "FCI", "backend": "FleetRobo", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 1, "primary_ip": "65.1.245.72", "port": 7884, "emergency_ip": "SIP/SPT : fcivlts.in", "port2": 9999, "url": "https://haryanafood.mapmyindia.com/nextgen/#/login", "alt_ips": []}, {"sr": 17, "state": "Himachal Pradesh", "category": "Transport", "backend": "CDAC", "vendor_2g": "WTEX", "vendor_4g": null, "mode": null, "primary_ip": "103.195.218.77", "port": null, "emergency_ip": "Not Empanelled", "port2": null, "url": null, "alt_ips": []}, {"sr": 18, "state": "Jharkhand", "category": "Transport", "backend": "NIC", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 1, "primary_ip": "commonlayer.parivahan.gov.in", "port": 9031, "emergency_ip": "commonlayer.parivahan.gov.in", "port2": 9032, "url": null, "alt_ips": []}, {"sr": 19, "state": "Jharkhand", "category": "Mining", "backend": "Intelliplanner", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 1, "primary_ip": "103.97.108.68", "port": 5124, "emergency_ip": null, "port2": null, "url": "https://vtsregistration.jharkhand.gov.in/", "alt_ips": []}, {"sr": 20, "state": "Jammu Kashmir", "category": "Transport", "backend": "NIC/BSNL", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 3, "primary_ip": "device.vltsecurity.com", "port": 2047, "emergency_ip": "emergency.vltsecurity.com", "port2": 1090, "url": "https://www.vltsecurity.com/", "alt_ips": []}, {"sr": 21, "state": "Jammu Kashmir", "category": "FCI", "backend": "NIC", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 1, "primary_ip": "fcivlts.in", "port": 9999, "emergency_ip": "fcivlts.in", "port2": 9999, "url": "https://fcivlts.in/", "alt_ips": []}, {"sr": 22, "state": "Karnataka", "category": "Mining", "backend": null, "vendor_2g": "WTEX", "vendor_4g": null, "mode": null, "primary_ip": "103.138.197.90", "port": 9092, "emergency_ip": "103.138.197.90", "port2": 9093, "url": null, "alt_ips": []}, {"sr": 23, "state": "Karnataka", "category": "Transport", "backend": "CDAC", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 13, "primary_ip": "210.212.237.164", "port": 8085, "emergency_ip": "210.212.237.164", "port2": 8085, "url": "https://khdvts.nyggs.com/", "alt_ips": []}, {"sr": 24, "state": "Karnataka Health", "category": null, "backend": "Project", "vendor_2g": "WATSOO", "vendor_4g": null, "mode": 0, "primary_ip": "PU:http://14.99.197.210:4043/api/reports/push/data", "port": "SIP/SPT -", "emergency_ip": "14.99.197.210", "port2": 3333, "url": null, "alt_ips": []}, {"sr": 25, "state": "Maharashtra", "category": "Transport", "backend": "Vahan Shakti", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 8, "primary_ip": "data.vahanshakti.in", "port": 4030, "emergency_ip": "data.vahanshakti.in", "port2": 4040, "url": "https://vahanshakti.in/", "alt_ips": ["Primary(alt): 103.91.244.23", "Emergency(alt): 103.91.244.23"]}, {"sr": 27, "state": "Maharashtra", "category": "Mining", "backend": "Shaurya Technosoft", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 3, "primary_ip": "43.205.159.137", "port": 17005, "emergency_ip": null, "port2": null, "url": "https://mahakhanij.maharashtra.gov.in/login.aspx", "alt_ips": []}, {"sr": 28, "state": "Maharashtra", "category": "Mining", "backend": "GNFC_Amnex", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 3, "primary_ip": "103.20.104.147", "port": 7173, "emergency_ip": null, "port2": null, "url": "https://khanija-maha.ncode.in/DGM_ILMS/Login.aspx", "alt_ips": []}, {"sr": 29, "state": "Meghalaya", "category": "Transport", "backend": "CDAC", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 5, "primary_ip": "210.212.237.164", "port": 80, "emergency_ip": "PU:http://210.212.237.164/", "port2": 8080, "url": "https://ml.surakshamitr.org/", "alt_ips": []}, {"sr": 30, "state": "Mizoram", "category": "Transport", "backend": "NIC", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 1, "primary_ip": "vltspvt.mizoram.nic.in", "port": 9031, "emergency_ip": "vltsemg.mizoram.nic.in", "port2": 9032, "url": null, "alt_ips": []}, {"sr": 31, "state": "Madhya Pradesh", "category": "Transport", "backend": "BSNL", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 3, "primary_ip": "mpdevice.vltsecurity.com", "port": 8123, "emergency_ip": "emergency.vltsecurity.com", "port2": 8124, "url": "https://mp.vltsecurity.com/#/", "alt_ips": []}, {"sr": 32, "state": "Madhya Pradesh", "category": "FCI", "backend": "NIC", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 1, "primary_ip": "fcivlts.in", "port": 9999, "emergency_ip": "fcivlts.in", "port2": 9999, "url": "https://fcivlts.in/", "alt_ips": []}, {"sr": 33, "state": "Nagaland", "category": "Transport", "backend": "NIC", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 1, "primary_ip": "commonlayer.parivahan.gov.in", "port": 9031, "emergency_ip": "commonlayer.parivahan.gov.in", "port2": 9032, "url": "https://www.vltsecurity.com/", "alt_ips": []}, {"sr": 34, "state": "Odisha", "category": "Transport", "backend": "Conginix/BSNL", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 4, "primary_ip": "164.100.64.216", "port": 8216, "emergency_ip": "164.100.64.215", "port2": 9202, "url": "https://vltdcp.odishatransport.gov.in/", "alt_ips": []}, {"sr": 35, "state": "Pondicherry", "category": "Transport", "backend": "Bloom", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 6, "primary_ip": "103.195.217.191 (New)", "port": 9201, "emergency_ip": "164.100.64.227 (Old)", "port2": 9201, "url": "https://mc.py.gov.in/", "alt_ips": []}, {"sr": 36, "state": "Punjab", "category": "Transport", "backend": "NIC", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 1, "primary_ip": "commonlayer.parivahan.gov.in", "port": 9031, "emergency_ip": "commonlayer.parivahan.gov.in", "port2": 9032, "url": "https://www.vltsecurity.com/", "alt_ips": []}, {"sr": 37, "state": "Punjab", "category": "Mining", "backend": "OWN API", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 0, "primary_ip": "14.99.197.210", "port": 5666, "emergency_ip": null, "port2": null, "url": "https://minesandgeology.punjab.gov.in/stone/index.php", "alt_ips": []}, {"sr": 38, "state": "Rajasthan", "category": "Transport", "backend": "NIC", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 1, "primary_ip": "vltspvt.rajasthan.gov.in", "port": 9031, "emergency_ip": "vltsemg.rajasthan.gov.in", "port2": 9032, "url": "https://www.vlts.rajasthan.gov.in/login", "alt_ips": []}, {"sr": 39, "state": "Rajasthan", "category": "Mining", "backend": "CSM", "vendor_2g": "WTEX", "vendor_4g": "WTEX", "mode": 11, "primary_ip": "track.rajvts.com", "port": 7001, "emergency_ip": null, "port2": null, "url": "https://minesportal.rajasthan.gov.in/#/login", "alt_ips": []}, {"sr": 40, "state": "Rajasthan", "category": "FCI", "backend": "NIC", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 1, "primary_ip": "fcivlts.in", "port": 9999, "emergency_ip": "fcivlts.in", "port2": 9999, "url": "https://fcivlts.in/", "alt_ips": []}, {"sr": 41, "state": "Sikkim", "category": "Transport", "backend": "Keletron", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 0, "primary_ip": "lstsk.vahanmitra.org", "port": 5400, "emergency_ip": "lstsk.vahanmitra.org", "port2": 9249, "url": "https://sk.vahanmitra.org/", "alt_ips": []}, {"sr": 42, "state": "Tamil Nadu", "category": "Transport", "backend": "CDAC", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 13, "primary_ip": "stavltsgw.tn.gov.in", "port": 8080, "emergency_ip": "stavltsgw.tn.gov.in", "port2": 8080, "url": null, "alt_ips": []}, {"sr": 43, "state": "Tamil Nadu", "category": "Mining", "backend": "Xenovex", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 0, "primary_ip": null, "port": null, "emergency_ip": null, "port2": null, "url": null, "alt_ips": []}, {"sr": 44, "state": "Tamil Nadu", "category": "TASMAC", "backend": null, "vendor_2g": "WTEX", "vendor_4g": null, "mode": 0, "primary_ip": "36.255.16.108", "port": 8224, "emergency_ip": null, "port2": null, "url": null, "alt_ips": []}, {"sr": 45, "state": "Telangana", "category": "Transport", "backend": "NIC", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 1, "primary_ip": "commonlayer.parivahan.gov.in", "port": 9031, "emergency_ip": "commonlayer.parivahan.gov.in", "port2": 9032, "url": null, "alt_ips": []}, {"sr": 46, "state": "Telangana", "category": "Mining", "backend": "TGMT-Online (OWN API)", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 0, "primary_ip": "14.99.197.210", "port": 5666, "emergency_ip": null, "port2": null, "url": null, "alt_ips": []}, {"sr": 47, "state": "Tripura", "category": "Transport", "backend": "Keletron", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 0, "primary_ip": "lsttr.vahanmitra.org", "port": 5200, "emergency_ip": "lsttr.vahanmitra.org", "port2": 9049, "url": "https://tr.vahanmitra.org/", "alt_ips": []}, {"sr": 48, "state": "Uttar Pradesh", "category": "Transport", "backend": "NIC", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 1, "primary_ip": "vltspvt.up.gov.in", "port": 9031, "emergency_ip": "vltsemg.up.gov.in", "port2": 9032, "url": "https://vlts.up.gov.in/login", "alt_ips": []}, {"sr": 49, "state": "Uttar Pradesh", "category": "Mining", "backend": "MARGSOFT", "vendor_2g": "WTEX", "vendor_4g": "PT4G", "mode": 12, "primary_ip": "154.210.168.75", "port": 4003, "emergency_ip": null, "port2": null, "url": "https://registration.vtsdgm.up.in/vendor-login", "alt_ips": []}, {"sr": 50, "state": "Uttar Pradesh", "category": "UPSRTC", "backend": "NEC Corporation India", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 1, "primary_ip": "gps.upsrtcvlt.com", "port": 65432, "emergency_ip": null, "port2": null, "url": "https://margdarshi.upsrtcvlt.com/", "alt_ips": ["Primary(alt): 103.97.108.68"]}, {"sr": 51, "state": "Uttrakhand", "category": "Transport", "backend": "NIC", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 1, "primary_ip": "vlt.uk.gov.in", "port": 9999, "emergency_ip": "vlt.uk.gov.in", "port2": 9999, "url": "https://vlt.uk.gov.in/", "alt_ips": ["Primary(alt): 103.116.27.26", "Emergency(alt): 103.116.27.26"]}, {"sr": 52, "state": "West Bengal", "category": "Transport", "backend": "Webel", "vendor_2g": "WTEX", "vendor_4g": "PT4G", "mode": 0, "primary_ip": "vltsgw.wb.gov.in", "port": 8865, "emergency_ip": "vltsgw.wb.gov.in", "port2": 5688, "url": "https://vlts.wb.gov.in/#/login", "alt_ips": []}, {"sr": 53, "state": "West Bengal", "category": "FCI Paddy", "backend": "Transglobal", "vendor_2g": "WTEX", "vendor_4g": null, "mode": 0, "primary_ip": "14.99.197.210", "port": 8800, "emergency_ip": null, "port2": null, "url": "https://vltsfs.wb.gov.in/", "alt_ips": []}], "clients": [{"sr": 1, "name": "Blackbuck", "primary_ip": "3.6.243.35", "port": 10109.0, "other_ip": null, "port2": null, "url": null}, {"sr": 2, "name": "WheelsEYE", "primary_ip": "65.1.190.236", "port": 9614.0, "other_ip": null, "port2": null, "url": null}, {"sr": 3, "name": "FleetX", "primary_ip": "13.126.49.12", "port": 4444.0, "other_ip": null, "port2": null, "url": null}, {"sr": 4, "name": "EEMOT", "primary_ip": "139.59.48.202", "port": 5179.0, "other_ip": null, "port2": null, "url": null}, {"sr": 5, "name": "SMB Tracker", "primary_ip": "52.74.44.145", "port": 8600.0, "other_ip": null, "port2": null, "url": null}, {"sr": 6, "name": "Geosafe", "primary_ip": "104.236.101.21", "port": 5179.0, "other_ip": "139.59.16.108", "port2": 5179.0, "url": null}, {"sr": 7, "name": "ANS IT Solutions", "primary_ip": "13.127.228.11", "port": 5285.0, "other_ip": null, "port2": null, "url": null}, {"sr": 8, "name": "TureTrack", "primary_ip": "ais.truetrackgps.in", "port": 5090.0, "other_ip": null, "port2": null, "url": null}, {"sr": 9, "name": "GPS Desk", "primary_ip": "13.127.96.143", "port": 5285.0, "other_ip": null, "port2": null, "url": null}, {"sr": 10, "name": "Tracknovate", "primary_ip": "13.234.242.1", "port": 5946.0, "other_ip": null, "port2": null, "url": null}, {"sr": 11, "name": "Vihana Telematcis", "primary_ip": "139.59.48.202", "port": 5179.0, "other_ip": null, "port2": null, "url": null}, {"sr": 12, "name": "Indtrack Technology Pvt Ltd", "primary_ip": "216.48.191.56", "port": 2044.0, "other_ip": null, "port2": null, "url": null}, {"sr": 13, "name": "Zenon Technologies", "primary_ip": "139.59.48.202", "port": 5179.0, "other_ip": null, "port2": null, "url": null}, {"sr": 14, "name": "Jtrack (Tracking Gadget)", "primary_ip": "207.180.241.76", "port": 5179.0, "other_ip": null, "port2": null, "url": null}, {"sr": 15, "name": "Mbind", "primary_ip": "34.27.213.140", "port": 6179.0, "other_ip": null, "port2": null, "url": null}, {"sr": 16, "name": "Yatis Telematics", "primary_ip": "103.138.197.90", "port": 9093.0, "other_ip": null, "port2": null, "url": null}, {"sr": 17, "name": "Ramvitha", "primary_ip": "103.138.197.90", "port": 8080.0, "other_ip": null, "port2": null, "url": null}, {"sr": 18, "name": "Aksa", "primary_ip": "13.126.36.205", "port": 1176.0, "other_ip": null, "port2": null, "url": null}, {"sr": 19, "name": "Gtrophy", "primary_ip": "devices.thelocate.in", "port": 4030.0, "other_ip": null, "port2": null, "url": null}, {"sr": 20, "name": "Aditi Tracking_Goa", "primary_ip": "3.7.238.246", "port": 5946.0, "other_ip": null, "port2": null, "url": null}, {"sr": 21, "name": "Aditi Tracking_MH", "primary_ip": "13.126.244.90", "port": 5946.0, "other_ip": null, "port2": null, "url": null}]};
 
 const STORAGE_KEY = 'vlts_dashboard_data_v1';
 let db = null;
@@ -219,7 +221,39 @@ function loadDB(){
   }catch(e){}
   return JSON.parse(JSON.stringify(SEED));
 }
+// ===== alphabetical order + "NEW for 24 hours" =====
+const NEW_MS = 24*60*60*1000;
+const SEEN_KEY = 'vlts_seen_v1';
+let seen = {init:false, map:{}};
+try{ const raw=localStorage.getItem(SEEN_KEY); if(raw) seen=JSON.parse(raw); }catch(e){}
+function entryKey(r){ return r.name!==undefined ? 'c|'+r.name+'|'+r.primary_ip : 's|'+[r.state,r.category,r.backend,r.primary_ip,r.port].join('|'); }
+function isNew(r){
+  const t = r.addedAt || seen.map[entryKey(r)];
+  return !!t && (Date.now()-t) < NEW_MS;
+}
+// entries that came from the Sheet without a timestamp: first time we see one (after the first load) -> it is "new" from now
+function stampSeen(){
+  const all = db.states.concat(db.clients);
+  all.forEach(r=>{
+    if(r.addedAt) return;
+    const k=entryKey(r);
+    if(!(k in seen.map)) seen.map[k] = seen.init ? Date.now() : 0;
+  });
+  seen.init = true;
+  try{ localStorage.setItem(SEEN_KEY, JSON.stringify(seen)); }catch(e){}
+}
+// always keep A-Z by State/UT (stable: same-state entries keep their order) and by Client name, then renumber
+function sortDB(){
+  const byText=(f)=>(a,b)=>String(f(a)||'').toLowerCase().localeCompare(String(f(b)||'').toLowerCase());
+  db.states.sort(byText(r=>r.state));
+  db.clients.sort(byText(r=>r.name));
+  db.states.forEach((r,i)=>r.sr=i+1);
+  db.clients.forEach((r,i)=>r.sr=i+1);
+}
+setInterval(()=>{ if(typeof renderTable==='function') renderTable(); }, 60000);   // so NEW highlight expires by itself
+
 function saveDB(){
+  sortDB();
   try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(db)); }catch(e){}
   schedulePush(); // no-op unless a Google Sheet is connected
 }
@@ -231,6 +265,7 @@ db = (function(){
   }catch(e){}
   return JSON.parse(JSON.stringify(SEED));
 })();
+sortDB();
 
 function catClass(cat){
   if(!cat) return 'cat-other';
@@ -300,9 +335,9 @@ function renderTable(){
       const vendor = [r.vendor_2g, r.vendor_4g].filter(Boolean).join(' / ') || '—';
       const altPrimary = (r.alt_ips||[]).filter(a=>a.startsWith('Primary')).map(a=>`<span class="alt">${a}</span>`).join('');
       const altEmergency = (r.alt_ips||[]).filter(a=>a.startsWith('Emergency')).map(a=>`<span class="alt">${a}</span>`).join('');
-      return `<tr class="${r._userAdded?'userAdded':''}">
+      return `<tr class="${isNew(r)?'is-new':''}">
         <td class="mono sub">${r.sr ?? '—'}</td>
-        <td class="state-name">${r.state ?? '—'}<div class="sub">${r.mode!==null&&r.mode!==undefined? 'Mode '+r.mode : ''}</div></td>
+        <td class="state-name">${r.state ?? '—'}${isNew(r)?'<span class="new-badge">NEW</span>':''}<div class="sub">${r.mode!==null&&r.mode!==undefined? 'Mode '+r.mode : ''}</div></td>
         <td><span class="cat-badge ${catClass(r.category)}">${r.category ?? '—'}</span></td>
         <td>${r.backend ?? '—'}</td>
         <td class="mono sub">${vendor}</td>
@@ -328,9 +363,9 @@ function renderTable(){
     }
     tbody.innerHTML = rows.map((r)=>{
       const realIndex = db.clients.indexOf(r);
-      return `<tr class="${r._userAdded?'userAdded':''}">
+      return `<tr class="${isNew(r)?'is-new':''}">
         <td class="mono sub">${r.sr ?? '—'}</td>
-        <td class="state-name">${r.name}</td>
+        <td class="state-name">${r.name}${isNew(r)?'<span class="new-badge">NEW</span>':''}</td>
         <td class="mono">${r.primary_ip ?? '—'}</td>
         <td class="mono sub">${r.port ?? '—'}</td>
       </tr>`;
@@ -370,7 +405,11 @@ function fieldsForStates(v={}){
     </div>
     <div class="grid2">
       <div class="field"><label>Backend</label><input id="f_backend" value="${v.backend??''}"></div>
-      <div class="field"><label>Vendor (2G / 4G)</label><input id="f_vendor" value="${[v.vendor_2g,v.vendor_4g].filter(Boolean).join(', ')}"></div>
+      <div class="field"><label>MODE</label><input id="f_mode" value="${v.mode??''}"></div>
+    </div>
+    <div class="grid2">
+      <div class="field"><label>Vendor (2G)</label><input id="f_vendor2g" value="${v.vendor_2g??''}"></div>
+      <div class="field"><label>Vendor (4G)</label><input id="f_vendor4g" value="${v.vendor_4g??''}"></div>
     </div>
     <div class="grid2">
       <div class="field"><label>Primary IP / Host</label><input id="f_primary" value="${v.primary_ip??''}"></div>
@@ -423,15 +462,14 @@ window.deleteEntry = function(tab, index){
 
 document.getElementById('btnSave').onclick = ()=>{
   if(currentTab==='states'){
-    const vendorRaw = document.getElementById('f_vendor').value.split(',').map(s=>s.trim()).filter(Boolean);
     const entry = {
       sr: editingIndex!==null ? db.states[editingIndex].sr : (Math.max(0,...db.states.map(s=>s.sr||0))+1),
       state: document.getElementById('f_state').value.trim() || null,
       category: document.getElementById('f_category').value.trim() || null,
       backend: document.getElementById('f_backend').value.trim() || null,
-      vendor_2g: vendorRaw[0] || null,
-      vendor_4g: vendorRaw[1] || null,
-      mode: editingIndex!==null ? db.states[editingIndex].mode : null,
+      vendor_2g: document.getElementById('f_vendor2g').value.trim() || null,
+      vendor_4g: document.getElementById('f_vendor4g').value.trim() || null,
+      mode: (function(){ const m=document.getElementById('f_mode').value.trim(); return m===''?null:(/^-?\d+$/.test(m)?parseInt(m,10):m); })(),
       primary_ip: document.getElementById('f_primary').value.trim() || null,
       port: document.getElementById('f_port').value.trim() || null,
       emergency_ip: document.getElementById('f_emergency').value.trim() || null,
@@ -445,7 +483,8 @@ document.getElementById('btnSave').onclick = ()=>{
         if(ea) alts.push('Emergency(alt): '+ea);
         return alts;
       })(),
-      _userAdded: editingIndex!==null ? db.states[editingIndex]._userAdded : true
+      addedAt: editingIndex!==null ? db.states[editingIndex].addedAt : Date.now(),
+      altRow: editingIndex!==null ? db.states[editingIndex].altRow : undefined
     };
     if(editingIndex!==null) db.states[editingIndex] = entry;
     else db.states.push(entry);
@@ -457,7 +496,7 @@ document.getElementById('btnSave').onclick = ()=>{
       name: document.getElementById('f_name').value.trim(),
       primary_ip: document.getElementById('f_primary').value.trim() || null,
       port: document.getElementById('f_port').value.trim() || null,
-      _userAdded: editingIndex!==null ? old._userAdded : true
+      addedAt: editingIndex!==null ? old.addedAt : Date.now()
     });
     if(editingIndex!==null) db.clients[editingIndex] = entry;
     else db.clients.push(entry);
@@ -538,15 +577,19 @@ function parseStates(rows){
     const c=r.map(sStr);
     if(c.every(x=>x===null)) return;
     if(c[1]) lastState=c[1];
-    if(c[0]===null && c[2]===null && c[3]===null){
+    // continuation row = no Sr No. AND (no State/UT, or no Category+Backend) -> alt IPs of the record above
+    const onlyIps = c[2]===null && c[3]===null && c[4]===null && c[5]===null && c[6]===null && c[11]===null && c[8]===null && c[10]===null && (c[7]||c[9]);
+    if((c[0]===null && (c[1]===null || (c[2]===null && c[3]===null))) || (cur && onlyIps && (c[1]===null || c[1]===cur.state))){
       if(cur){
         if(c[7]) cur.alt_ips.push('Primary(alt): '+c[7]);
         if(c[9]) cur.alt_ips.push('Emergency(alt): '+c[9]);
+        cur.altRow=r.map(v=>v==null?'':v);   // keep the row's other cells (category, ports...) so the sheet is not altered
       }
       return;
     }
     cur={ sr:sNum(c[0]), state:lastState, category:c[2], backend:c[3], vendor_2g:c[4], vendor_4g:c[5],
-          mode:sNum(c[6]), primary_ip:c[7], port:sNum(c[8]), emergency_ip:c[9], port2:sNum(c[10]), url:c[11], alt_ips:[] };
+          mode:sNum(c[6]), primary_ip:c[7], port:sNum(c[8]), emergency_ip:c[9], port2:sNum(c[10]), url:c[11], alt_ips:[],
+          addedAt:(Number(c[12])||null) };
     out.push(cur);
   });
   return out;
@@ -556,31 +599,37 @@ function buildStateRows(states){
   states.forEach(s=>{
     const showState = s.state && s.state!==prev;
     rows.push([s.sr??'', showState?s.state:'', s.category??'', s.backend??'', s.vendor_2g??'', s.vendor_4g??'',
-               s.mode??'', s.primary_ip??'', s.port??'', s.emergency_ip??'', s.port2??'', s.url??'']);
+               s.mode??'', s.primary_ip??'', s.port??'', s.emergency_ip??'', s.port2??'', s.url??'', s.addedAt??'']);
     if(s.state) prev=s.state;
     const pa=altOf(s,'Primary(alt)'), ea=altOf(s,'Emergency(alt)');
-    if(pa||ea) rows.push(['','','','','','','',pa,'',ea,'','']);
+    if(pa||ea){
+      const base = (s.altRow && s.altRow.length>=12) ? s.altRow.slice(0,13) : ['','','','','','','',pa,'',ea,'',''];
+      while(base.length<13) base.push('');
+      base[7]=pa; base[9]=ea; base[12]='';
+      rows.push(base);
+    }
   });
   return rows;
 }
 function parseClients(rows){
   return rows.map(r=>r.map(sStr)).filter(c=>c.some(x=>x!==null)).map(c=>({
-    sr:sNum(c[0]), name:c[1], primary_ip:c[2], port:sNum(c[3]), other_ip:c[4], port2:sNum(c[5]), url:c[6]
+    sr:sNum(c[0]), name:c[1], primary_ip:c[2], port:sNum(c[3]), other_ip:c[4], port2:sNum(c[5]), url:c[6], addedAt:(Number(c[7])||null)
   })).filter(c=>c.name);
 }
 function buildClientRows(clients){
-  return clients.map(c=>[c.sr??'', c.name??'', c.primary_ip??'', c.port??'', c.other_ip??'', c.port2??'', c.url??'']);
+  return clients.map(c=>[c.sr??'', c.name??'', c.primary_ip??'', c.port??'', c.other_ip??'', c.port2??'', c.url??'', c.addedAt??'']);
 }
 // ==SYNC-PURE-END==
 
 const CFG_KEY='vlts_sync_cfg_v1';
 // Default connection — dashboard khulte hi apne aap connect ho jata hai (Connect Sheet dobara nahi karna padega)
 const DEFAULT_CFG={
-  url:'https://script.google.com/macros/s/AKfycbzif5ny0CuqP3RyYqEhcASpxOdz8C_MVtbgZBF5T6BZrAhgYEJnS3pm4xLa1-AqDU8G/exec',
+  url:'https://script.google.com/macros/s/AKfycby2SbSSE-mVGve5eniY544HNbJil-d2mXWuaR70G4GLQyW9d7fxv9aSXpjBbQHovpsd/exec',
   token:'vltsdk2026'
 };
+// Always use the defaults above (a stale URL saved in the browser must never override them)
 let cfg=Object.assign({},DEFAULT_CFG);
-try{ const raw=localStorage.getItem(CFG_KEY); if(raw) cfg=JSON.parse(raw); }catch(e){}
+try{ localStorage.removeItem(CFG_KEY); }catch(e){}
 let lastRaw=null, pushTimer=null, pushing=false, pollTimer=null;
 const syncPill=document.getElementById('syncPill');
 const cfgOverlay=document.getElementById('cfgOverlay');
@@ -594,7 +643,7 @@ function toast(msg){
 }
 function updateFooter(){
   document.getElementById('footerNote').textContent = isConnected()
-    ? 'Connected to Google Sheet · sheet mein edit karein ya yahan — dono taraf ~20 second mein sync ho jata hai'
+    ? 'Connected to Google Sheet · sheet mein edit karein ya yahan — dono taraf ~10 second mein sync ho jata hai'
     : 'Not connected to Google Sheet — click "Connect Sheet" to turn on live two-way sync';
 }
 async function fetchSheet(){
@@ -609,7 +658,11 @@ async function fetchSheet(){
 function applyServer(data){
   db.states=parseStates(data.states);
   db.clients=parseClients(data.clients);
+  stampSeen();
+  sortDB();
   lastRaw=JSON.stringify([data.states,data.clients]);
+  lastPushed.states=JSON.stringify(buildStateRows(db.states));
+  lastPushed.clients=JSON.stringify(buildClientRows(db.clients));
   try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(db)); }catch(e){}
   refreshAll();
 }
@@ -637,43 +690,65 @@ function schedulePush(){
   if(!isConnected()) return;
   clearTimeout(pushTimer);
   setStatus('busy','Saving…');
-  pushTimer=setTimeout(pushToSheet,700);
+  pushTimer=setTimeout(pushToSheet,250);
 }
+let lastPushed={states:null,clients:null};
 async function pushToSheet(){
   pushTimer=null; pushing=true;
-  const states=buildStateRows(db.states);
-  const clients=buildClientRows(db.clients);
+  const allStates=buildStateRows(db.states);
+  const allClients=buildClientRows(db.clients);
+  // send only the tab that actually changed -> much less work for Google
+  const sendStates = JSON.stringify(allStates)!==lastPushed.states;
+  const sendClients = JSON.stringify(allClients)!==lastPushed.clients;
+  if(!sendStates && !sendClients){ setStatus('live','Saved · '+new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})); pushing=false; return; }
+  const payload={token:cfg.token};
+  if(sendStates) payload.states=allStates;
+  if(sendClients) payload.clients=allClients;
   try{
-    await fetch(cfg.url,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},
-      body:JSON.stringify({token:cfg.token,states,clients})});
-    await new Promise(r=>setTimeout(r,1500));
-    const data=await fetchSheet();
-    const norm=rows=>JSON.stringify(rows.map(r=>r.map(v=>String(v==null?'':v))));
-    lastRaw=JSON.stringify([data.states,data.clients]);
-    if(norm(data.states)!==norm(states) || norm(data.clients)!==norm(clients)){
-      setStatus('err','Save not verified');
-      toast('Sheet mein save verify nahi hua — URL/token check karein ya sheet manually dekhein');
-    }else{
-      setStatus('live','Saved · '+new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}));
+    const body=JSON.stringify(payload);
+    try{
+      const res=await fetch(cfg.url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body});
+      const reply=await res.json();
+      if(!(reply && reply.ok)) throw new Error((reply&&reply.error)||'save failed');
+    }catch(fastErr){
+      if(fastErr instanceof SyntaxError===false && fastErr.name!=='TypeError') throw fastErr;
+      // Reply unreadable by browser -> send blind, then verify by reading back
+      await fetch(cfg.url,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body});
+      await new Promise(r=>setTimeout(r,1200));
+      const data=await fetchSheet();
+      const norm=rows=>JSON.stringify(rows.map(r=>r.map(v=>String(v==null?'':v))));
+      if((sendStates && norm(data.states)!==norm(allStates)) || (sendClients && norm(data.clients)!==norm(allClients))){
+        setStatus('err','Save not verified');
+        toast('Sheet mein save verify nahi hua — URL/token check karein ya sheet manually dekhein');
+        return;
+      }
     }
+    if(sendStates) lastPushed.states=JSON.stringify(allStates);
+    if(sendClients) lastPushed.clients=JSON.stringify(allClients);
+    setStatus('live','Saved · '+new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}));
   }catch(e){
     setStatus('err','Save failed');
-    toast('Sheet mein save nahi hua: '+e.message);
+    toast(/Bad row length/.test(e.message) ? 'Naya Code.gs paste karke Deploy → Manage deployments → New version karein (Added On column ke liye)' : 'Sheet mein save nahi hua: '+e.message);
   }finally{
     pushing=false;
   }
 }
 function startPolling(){
   clearInterval(pollTimer);
-  pollTimer=setInterval(()=>pullFromSheet(true),20000);
+  pollTimer=setInterval(()=>pullFromSheet(true),10000);
 }
 document.addEventListener('visibilitychange',()=>{ if(!document.hidden) pullFromSheet(true); });
 
-document.getElementById('btnConnect').onclick=()=>{
-  document.getElementById('cfgUrl').value=cfg.url||'';
-  document.getElementById('cfgToken').value=cfg.token||'';
-  cfgMsg.textContent='';
-  cfgOverlay.classList.add('show');
+document.getElementById('btnConnect').onclick=async()=>{
+  // One click: connect with saved/default URL + token and load the sheet (no popup)
+  if(!isConnected()) cfg=Object.assign({},DEFAULT_CFG);
+  lastRaw=null;
+  const ok=await pullFromSheet(false);
+  if(ok){
+    try{ localStorage.setItem(CFG_KEY, JSON.stringify(cfg)); }catch(e){}
+    startPolling(); updateFooter();
+    toast('Sheet connected — '+db.states.length+' state entries, '+db.clients.length+' clients load hue');
+  }
 };
 document.getElementById('cfgCancel').onclick=()=>cfgOverlay.classList.remove('show');
 cfgOverlay.addEventListener('click',e=>{ if(e.target===cfgOverlay) cfgOverlay.classList.remove('show'); });

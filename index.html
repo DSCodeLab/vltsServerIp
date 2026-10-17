@@ -2,8 +2,10 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>VLTS Server Registry</title>
+<title>VLTS Server Configuration</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <style>
   :root{
     --bg:#F5F7FA;
@@ -163,15 +165,19 @@
   <div class="brand">
     <div class="brand-mark">VLT</div>
     <div>
-      <h1><span class="pulse"></span>VLTS Server Registry</h1>
+      <h1><span class="pulse"></span>VLTS Server Configuration</h1>
       <p>State &amp; client server IP / URL directory — India <span id="syncPill" class="sync-pill off">● Not connected</span></p>
     </div>
   </div>
   <div class="actions">
     <button class="ghost" id="btnConnect" title="Connect &amp; Load" aria-label="Connect &amp; Load" style="font-size:17px;padding:7px 12px;line-height:1;">⟳</button>
-    <!-- <button class="ghost" id="btnUpload">⇪ Import Excel</button> -->
+    <button class="ghost" id="btnUpload" style="display:none">⇪ Import Excel</button>
     <input type="file" id="fileInput" accept=".xlsx" style="display:none">
-    <button class="ghost" id="btnPrint">🖨 Print / PDF</button>
+    <select id="pdfSize" title="PDF paper size" style="border:1px solid var(--border);background:var(--panel-2);color:var(--text);border-radius:8px;padding:9px 8px;font-size:13px;font-weight:600;font-family:var(--sans);">
+      <option value="a4">A4</option><option value="a3">A3</option><option value="a2">A2</option><option value="a1">A1</option>
+    </select>
+    <button class="ghost" id="btnPdf">⇩ Download PDF</button>
+    <button class="ghost" id="btnPrint">🖨 Print</button>
     <button class="ghost" id="btnExport">⇩ Export to Excel</button>
     <button class="primary" id="btnAdd">+ Add Entry</button>
   </div>
@@ -196,7 +202,7 @@
   </table>
 </div>
 
-<footer id="footerNote">Not connected to Google Sheet — click "Connect Sheet" to turn on live two-way sync</footer>
+<footer id="footerNote">© Watsoo Express | AIS 140 State Wise Server Configuration</footer>
 
 <!-- Connect Sheet modal -->
 <div class="overlay" id="cfgOverlay">
@@ -660,9 +666,7 @@ function toast(msg){
   clearTimeout(toast._t); toast._t=setTimeout(()=>t.classList.remove('show'),4500);
 }
 function updateFooter(){
-  document.getElementById('footerNote').textContent = isConnected()
-    ? 'Connected to Google Sheet · sheet mein edit karein ya yahan — dono taraf ~10 second mein sync ho jata hai'
-    : 'Not connected to Google Sheet — click "Connect Sheet" to turn on live two-way sync';
+  document.getElementById('footerNote').textContent = '© Watsoo Express | AIS 140 State Wise Server Configuration';
 }
 async function fetchSheet(){
   const u=cfg.url+(cfg.url.includes('?')?'&':'?')+'token='+encodeURIComponent(cfg.token)+'&t='+Date.now();
@@ -791,8 +795,85 @@ document.getElementById('btnPrint').onclick = ()=>{
   const rows = document.querySelectorAll('#tbody tr').length;
   const q = document.getElementById('searchInput').value.trim();
   const info = [tabName + (activeCategory ? ' · ' + activeCategory : ''), q ? 'Search: "'+q+'"' : null, rows+' entries', new Date().toLocaleString()].filter(Boolean).join('  |  ');
-  document.getElementById('printHead').innerHTML = '<h1>VLTS Server IP &amp; URL List</h1><p>'+info+'</p>';
+  document.getElementById('printHead').innerHTML = '<h1>VLTS Server Configuration</h1><p>'+info+'</p>';
   window.print();   // in the print window choose "Save as PDF" as the destination
+};
+
+// ---- Download PDF (A4 / A3 / A2 / A1, landscape) — current tab, current search/filter, A-Z screen order ----
+function viewRows(tab){
+  const q = document.getElementById('searchInput').value.trim().toLowerCase();
+  if(tab==='states'){
+    return sortView(db.states).filter(r=>{
+      if(activeCategory && r.category!==activeCategory) return false;
+      if(!q) return true;
+      return [r.state,r.category,r.backend,r.primary_ip,r.emergency_ip,r.url,r.vendor_2g,r.vendor_4g].join(' ').toLowerCase().includes(q);
+    });
+  }
+  return sortView(db.clients).filter(r=> !q || [r.name,r.primary_ip].join(' ').toLowerCase().includes(q));
+}
+document.getElementById('btnPdf').onclick = ()=>{
+  if(!(window.jspdf && window.jspdf.jsPDF)){ toast('PDF library load nahi hui — internet check karke page refresh karein'); return; }
+  const size = document.getElementById('pdfSize').value;            // a4 | a3 | a2 | a1
+  const doc = new window.jspdf.jsPDF({orientation:'landscape', unit:'mm', format:size});
+  const pw = doc.internal.pageSize.getWidth(), ph = doc.internal.pageSize.getHeight();
+  const k = pw/297;                                                  // scale everything relative to A4 landscape
+  const m = 10*k, top = 24*k, bottom = 14*k;
+  const rows = viewRows(currentTab);
+  const tabName = currentTab==='states' ? 'State IP' : 'Client IP';
+  const q = document.getElementById('searchInput').value.trim();
+  const info = [tabName + (currentTab==='states' && activeCategory ? ' · '+activeCategory : ''), q?'Search: "'+q+'"':null, rows.length+' entries', new Date().toLocaleString()].filter(Boolean).join('   |   ');
+  const FOOT = '© Watsoo Express | AIS 140 State Wise Server Configuration';
+  const ink=[27,36,48], muted=[104,113,126], teal=[13,148,136];
+  const clean = v => (v===null||v===undefined||v==='') ? '-' : String(v);
+
+  let head, body, widths, urlCol=-1;
+  if(currentTab==='states'){
+    head = [['#','State / UT','Category','Backend','Vendor','Primary IP / URL','Port','Emergency IP','Port','Login URL']];
+    body = rows.map(r=>{
+      const pa=altOf(r,'Primary(alt)'), ea=altOf(r,'Emergency(alt)');
+      return [ clean(r.sr), clean(r.state)+(r.mode!==null&&r.mode!==undefined&&r.mode!==''?'\nMode '+r.mode:''), clean(r.category), clean(r.backend),
+               [r.vendor_2g,r.vendor_4g].filter(Boolean).join(' / ')||'-',
+               clean(r.primary_ip)+(pa?'\nAlt: '+pa:''), clean(r.port),
+               clean(r.emergency_ip)+(ea?'\nAlt: '+ea:''), clean(r.port2), clean(r.url) ];
+    });
+    widths=[4,11,8,12,8,18,5,18,5,19]; urlCol=9;
+  }else{
+    head = [['#','Client','Primary IP','Port']];
+    body = rows.map(r=>[clean(r.sr), clean(r.name), clean(r.primary_ip), clean(r.port)]);
+    widths=[6,40,40,14];
+  }
+  const tot = widths.reduce((a,b)=>a+b,0), avail = pw-2*m;
+  const colStyles = {}; widths.forEach((w,i)=>{ colStyles[i]={cellWidth: avail*w/tot}; });
+
+  doc.autoTable({
+    head, body,
+    startY: top, margin:{top:top, left:m, right:m, bottom:bottom},
+    styles:{font:'helvetica', fontSize:7.5*k, cellPadding:1.6*k, textColor:ink, lineColor:[220,226,234], lineWidth:0.1*k, overflow:'linebreak', valign:'middle'},
+    headStyles:{fillColor:teal, textColor:255, fontStyle:'bold', fontSize:7.5*k},
+    alternateRowStyles:{fillColor:[245,247,250]},
+    columnStyles: colStyles,
+    rowPageBreak:'avoid',
+    showHead:'everyPage',
+    didParseCell: d=>{ if(d.section==='body' && d.column.index===urlCol && d.cell.raw!=='-'){ d.cell.styles.textColor=[37,99,235]; } },
+    didDrawCell: d=>{ if(d.section==='body' && d.column.index===urlCol && d.cell.raw && d.cell.raw!=='-'){ doc.link(d.cell.x,d.cell.y,d.cell.width,d.cell.height,{url:d.cell.raw}); } },
+    didDrawPage: ()=>{
+      doc.setFont('helvetica','bold'); doc.setFontSize(15*k); doc.setTextColor(...ink);
+      doc.text('VLTS Server Configuration', m, 12*k);
+      doc.setFont('helvetica','normal'); doc.setFontSize(8*k); doc.setTextColor(...muted);
+      doc.text(info, m, 17.5*k);
+      doc.setDrawColor(...teal); doc.setLineWidth(0.5*k); doc.line(m, 20*k, pw-m, 20*k);
+    }
+  });
+  const n = doc.internal.getNumberOfPages();
+  for(let i=1;i<=n;i++){
+    doc.setPage(i);
+    doc.setFont('helvetica','normal'); doc.setFontSize(7.5*k); doc.setTextColor(...muted);
+    doc.setDrawColor(200,206,214); doc.setLineWidth(0.2*k); doc.line(m, ph-bottom+3*k, pw-m, ph-bottom+3*k);
+    doc.text(FOOT, m, ph-bottom+8*k);
+    doc.text('Page '+i+' of '+n, pw-m, ph-bottom+8*k, {align:'right'});
+  }
+  doc.save('VLTS_Server_Configuration_'+(currentTab==='states'?'State':'Client')+'_'+size.toUpperCase()+'.pdf');
+  toast('PDF download ho gaya — '+size.toUpperCase()+', '+rows.length+' entries');
 };
 refreshAll();
 updateFooter();

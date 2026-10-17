@@ -133,6 +133,28 @@
     .stats{grid-template-columns:repeat(2,1fr);}
     body{padding:18px;}
   }
+  /* ===== PRINT / SAVE AS PDF ===== */
+  .print-head{display:none;}
+  @page{size:A4 landscape;margin:10mm;}
+  @media print{
+    html,body{background:#fff !important;color:#000 !important;}
+    body{padding:0 !important;}
+    .topbar,.stats,.toolbar,footer,.toast,.overlay,.new-badge{display:none !important;}
+    .print-head{display:block;margin:0 0 8px;font-family:var(--sans);}
+    .print-head h1{font-size:15px;margin:0 0 2px;}
+    .print-head p{font-size:10.5px;margin:0;color:#444;}
+    .table-wrap{max-height:none !important;overflow:visible !important;border:none !important;background:#fff !important;}
+    table{font-size:9.5px;}
+    thead{display:table-header-group;}
+    thead th{position:static !important;background:#eee !important;color:#000 !important;border-bottom:1px solid #999 !important;}
+    tbody tr{page-break-inside:avoid;break-inside:avoid;background:#fff !important;box-shadow:none !important;}
+    td,th{white-space:normal !important;overflow:visible !important;word-break:break-word;color:#000 !important;border-bottom:1px solid #ccc;padding:4px 5px !important;}
+    a{color:#000 !important;text-decoration:none !important;}
+    .cat-badge{background:none !important;color:#000 !important;padding:0 !important;}
+    td.mono,.alt,.port{font-size:8.5px !important;word-break:normal !important;overflow-wrap:break-word !important;}
+    .alt{color:#7a5200 !important;}
+    *{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  }
 </style>
 </head>
 <body>
@@ -149,11 +171,13 @@
     <button class="ghost" id="btnConnect" title="Connect &amp; Load" aria-label="Connect &amp; Load" style="font-size:17px;padding:7px 12px;line-height:1;">⟳</button>
     <button class="ghost" id="btnUpload">⇪ Import Excel</button>
     <input type="file" id="fileInput" accept=".xlsx" style="display:none">
+    <button class="ghost" id="btnPrint">🖨 Print / PDF</button>
     <button class="ghost" id="btnExport">⇩ Export to Excel</button>
     <button class="primary" id="btnAdd">+ Add Entry</button>
   </div>
 </div>
 
+<div class="print-head" id="printHead"></div>
 <div class="stats" id="stats"></div>
 
 <div class="toolbar">
@@ -242,18 +266,13 @@ function stampSeen(){
   seen.init = true;
   try{ localStorage.setItem(SEEN_KEY, JSON.stringify(seen)); }catch(e){}
 }
-// always keep A-Z by State/UT (stable: same-state entries keep their order) and by Client name, then renumber
-function sortDB(){
-  const byText=(f)=>(a,b)=>String(f(a)||'').toLowerCase().localeCompare(String(f(b)||'').toLowerCase());
-  db.states.sort(byText(r=>r.state));
-  db.clients.sort(byText(r=>r.name));
-  db.states.forEach((r,i)=>r.sr=i+1);
-  db.clients.forEach((r,i)=>r.sr=i+1);
+// A-Z is for the SCREEN ONLY: returns a sorted copy; db (and the Google Sheet) keep their own order and Sr No.
+function sortView(list){
+  return list.slice().sort((a,b)=>String((a.state ?? a.name) || '').toLowerCase().localeCompare(String((b.state ?? b.name) || '').toLowerCase()));
 }
 setInterval(()=>{ if(typeof renderTable==='function') renderTable(); }, 60000);   // so NEW highlight expires by itself
 
 function saveDB(){
-  sortDB();
   try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(db)); }catch(e){}
   schedulePush(); // no-op unless a Google Sheet is connected
 }
@@ -265,7 +284,6 @@ db = (function(){
   }catch(e){}
   return JSON.parse(JSON.stringify(SEED));
 })();
-sortDB();
 
 function catClass(cat){
   if(!cat) return 'cat-other';
@@ -320,7 +338,7 @@ function renderTable(){
       <th>#</th><th>State / UT</th><th>Category</th><th>Backend</th><th>Vendor</th>
       <th>Primary IP / URL</th><th>Port</th><th>Emergency IP</th><th>Port</th><th>Login URL</th>
     </tr>`;
-    let rows = db.states.filter(r=>{
+    let rows = sortView(db.states).filter(r=>{
       if(activeCategory && r.category !== activeCategory) return false;
       if(!q) return true;
       const hay = [r.state,r.category,r.backend,r.primary_ip,r.emergency_ip,r.url,r.vendor_2g,r.vendor_4g].join(' ').toLowerCase();
@@ -352,7 +370,7 @@ function renderTable(){
     thead.innerHTML = `<tr>
       <th>#</th><th>Client</th><th>Primary IP</th><th>Port</th>
     </tr>`;
-    let rows = db.clients.filter(r=>{
+    let rows = sortView(db.clients).filter(r=>{
       if(!q) return true;
       const hay = [r.name,r.primary_ip].join(' ').toLowerCase();
       return hay.includes(q);
@@ -487,7 +505,7 @@ document.getElementById('btnSave').onclick = ()=>{
       altRow: editingIndex!==null ? db.states[editingIndex].altRow : undefined
     };
     if(editingIndex!==null) db.states[editingIndex] = entry;
-    else db.states.push(entry);
+    else { db.states.push(entry); queueAppend('states', buildStateRows([entry])); }
   } else {
     const old = editingIndex!==null ? db.clients[editingIndex] : {};
     // keep hidden fields (Other IP / Port / Url) so they are not wiped from the sheet on save
@@ -499,7 +517,7 @@ document.getElementById('btnSave').onclick = ()=>{
       addedAt: editingIndex!==null ? old.addedAt : Date.now()
     });
     if(editingIndex!==null) db.clients[editingIndex] = entry;
-    else db.clients.push(entry);
+    else { db.clients.push(entry); queueAppend('clients', buildClientRows([entry])); }
   }
   saveDB();
   overlay.classList.remove('show');
@@ -659,10 +677,7 @@ function applyServer(data){
   db.states=parseStates(data.states);
   db.clients=parseClients(data.clients);
   stampSeen();
-  sortDB();
   lastRaw=JSON.stringify([data.states,data.clients]);
-  lastPushed.states=JSON.stringify(buildStateRows(db.states));
-  lastPushed.clients=JSON.stringify(buildClientRows(db.clients));
   try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(db)); }catch(e){}
   refreshAll();
 }
@@ -686,49 +701,42 @@ async function pullFromSheet(silent){
     return false;
   }
 }
-function schedulePush(){
+// SAFE SAVE: the dashboard never rewrites the Sheet. A new entry is only ADDED at the bottom; existing rows are untouched.
+function schedulePush(){ /* intentionally empty - full-sheet writes are disabled */ }
+let appendChain=Promise.resolve();
+function queueAppend(tab, rows){
   if(!isConnected()) return;
-  clearTimeout(pushTimer);
-  setStatus('busy','Saving…');
-  pushTimer=setTimeout(pushToSheet,250);
+  appendChain=appendChain.then(()=>appendToSheet(tab, rows)).catch(()=>{});
 }
-let lastPushed={states:null,clients:null};
-async function pushToSheet(){
-  pushTimer=null; pushing=true;
-  const allStates=buildStateRows(db.states);
-  const allClients=buildClientRows(db.clients);
-  // send only the tab that actually changed -> much less work for Google
-  const sendStates = JSON.stringify(allStates)!==lastPushed.states;
-  const sendClients = JSON.stringify(allClients)!==lastPushed.clients;
-  if(!sendStates && !sendClients){ setStatus('live','Saved · '+new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})); pushing=false; return; }
-  const payload={token:cfg.token};
-  if(sendStates) payload.states=allStates;
-  if(sendClients) payload.clients=allClients;
+async function appendToSheet(tab, rows){
+  pushing=true; setStatus('busy','Saving…');
+  const stamp=()=>new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
   try{
-    const body=JSON.stringify(payload);
+    const body=JSON.stringify({token:cfg.token, action:'append', tab, rows});
     try{
       const res=await fetch(cfg.url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body});
       const reply=await res.json();
       if(!(reply && reply.ok)) throw new Error((reply&&reply.error)||'save failed');
-    }catch(fastErr){
-      if(fastErr instanceof SyntaxError===false && fastErr.name!=='TypeError') throw fastErr;
-      // Reply unreadable by browser -> send blind, then verify by reading back
-      await fetch(cfg.url,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body});
-      await new Promise(r=>setTimeout(r,1200));
+    }catch(err){
+      if(err instanceof SyntaxError===false && err.name!=='TypeError') throw err;
+      // Reply unreadable: do NOT blindly resend (could add twice). Read the sheet back and check.
+      await new Promise(r=>setTimeout(r,1500));
       const data=await fetchSheet();
-      const norm=rows=>JSON.stringify(rows.map(r=>r.map(v=>String(v==null?'':v))));
-      if((sendStates && norm(data.states)!==norm(allStates)) || (sendClients && norm(data.clients)!==norm(allClients))){
-        setStatus('err','Save not verified');
-        toast('Sheet mein save verify nahi hua — URL/token check karein ya sheet manually dekhein');
-        return;
+      const list = tab==='clients' ? data.clients : data.states;
+      const norm=r=>JSON.stringify(r.map(v=>String(v==null?'':v)));
+      const first=norm(rows[0]);
+      if(!list.some(r=>norm(r)===first)){
+        await fetch(cfg.url,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body});
+        await new Promise(r=>setTimeout(r,1500));
+        const again=await fetchSheet();
+        const l2 = tab==='clients' ? again.clients : again.states;
+        if(!l2.some(r=>norm(r)===first)) throw new Error('Sheet mein row nahi mili');
       }
     }
-    if(sendStates) lastPushed.states=JSON.stringify(allStates);
-    if(sendClients) lastPushed.clients=JSON.stringify(allClients);
-    setStatus('live','Saved · '+new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}));
+    setStatus('live','Saved · '+stamp());
   }catch(e){
     setStatus('err','Save failed');
-    toast(/Bad row length/.test(e.message) ? 'Naya Code.gs paste karke Deploy → Manage deployments → New version karein (Added On column ke liye)' : 'Sheet mein save nahi hua: '+e.message);
+    toast(/Purana dashboard|Bad row length/.test(e.message) ? 'Naya Code.gs paste karke Deploy → Manage deployments → New version karein' : 'Sheet mein save nahi hua: '+e.message);
   }finally{
     pushing=false;
   }
@@ -776,6 +784,16 @@ document.getElementById('cfgDisconnect').onclick=()=>{
   cfgOverlay.classList.remove('show');
 };
 
+
+// ---- Print / Save as PDF (prints the tab you are on, with the current search/filter, in A-Z screen order) ----
+document.getElementById('btnPrint').onclick = ()=>{
+  const tabName = currentTab==='states' ? 'State IP' : 'Client IP';
+  const rows = document.querySelectorAll('#tbody tr').length;
+  const q = document.getElementById('searchInput').value.trim();
+  const info = [tabName + (activeCategory ? ' · ' + activeCategory : ''), q ? 'Search: "'+q+'"' : null, rows+' entries', new Date().toLocaleString()].filter(Boolean).join('  |  ');
+  document.getElementById('printHead').innerHTML = '<h1>VLTS Server IP &amp; URL List</h1><p>'+info+'</p>';
+  window.print();   // in the print window choose "Save as PDF" as the destination
+};
 refreshAll();
 updateFooter();
 if(isConnected()){ pullFromSheet(false); startPolling(); }

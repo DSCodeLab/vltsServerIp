@@ -67,17 +67,20 @@
   table{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed;}
 
   /* ===== STATE TABLE COLUMN WIDTHS — edit these % values manually as needed ===== */
-  #thead th:nth-child(1){width:4%;}   /* # */
-  #thead th:nth-child(2){width:15%;}  /* State / UT */
+  #thead th:nth-child(1){width:3%;}   /* # */
+  #thead th:nth-child(2){width:11%;}  /* State / UT */
   #thead th:nth-child(3){width:9%;}   /* Category */
-  #thead th:nth-child(4){width:13%;}   /* Backend */
-  #thead th:nth-child(5){width:9%;}   /* Vendor */
-  #thead th:nth-child(6){width:21%;}  /* Primary IP / URL <-- reduce this % to shrink */
-  #thead th:nth-child(7){width:7%;}   /* Port */
-  #thead th:nth-child(8){width:21%;}  /* Emergency IP <-- reduce this % to shrink */
-  #thead th:nth-child(9){width:7%;}   /* Port */
-  #thead th:nth-child(10){width:10%;} /* Login URL */
+  #thead th:nth-child(4){width:8%;}  /* Backend */
+  #thead th:nth-child(5){width:6%;}   /* Vendor 2G */
+  #thead th:nth-child(6){width:6%;}   /* Vendor 4G */
+  #thead th:nth-child(7){width:23%;}  /* Primary IP / URL <-- reduce this % to shrink */
+  #thead th:nth-child(8){width:6%;}   /* Port */
+  #thead th:nth-child(9){width:26%;}  /* Emergency IP <-- reduce this % to shrink */
+  #thead th:nth-child(10){width:6%;}  /* Port */
+  #thead th:nth-child(11){width:7%;} /* Login URL */
+  #thead th:nth-child(5),#thead th:nth-child(6){white-space:nowrap;letter-spacing:.2px;padding-left:8px;padding-right:4px;}
   td, th{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  tbody td:nth-child(4){white-space:normal;word-break:break-word;}
   td.mono, .alt{white-space:normal;word-break:break-all;}
   thead th{text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted-2);padding:9px 12px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--bg);}
   tbody tr{border-bottom:1px solid var(--border-soft);}
@@ -341,7 +344,7 @@ function renderTable(){
 
   if(currentTab === 'states'){
     thead.innerHTML = `<tr>
-      <th>#</th><th>State / UT</th><th>Category</th><th>Backend</th><th>Vendor</th>
+      <th>#</th><th>State / UT</th><th>Category</th><th>Backend</th><th>Vendor 2G</th><th>Vendor 4G</th>
       <th>Primary IP / URL</th><th>Port</th><th>Emergency IP</th><th>Port</th><th>Login URL</th>
     </tr>`;
     let rows = sortView(db.states).filter(r=>{
@@ -351,12 +354,11 @@ function renderTable(){
       return hay.includes(q);
     });
     if(rows.length===0){
-      tbody.innerHTML = `<tr><td colspan="10"><div class="empty">No matching entries. Try a different search or filter.</div></td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="11"><div class="empty">No matching entries. Try a different search or filter.</div></td></tr>`;
       return;
     }
     tbody.innerHTML = rows.map((r)=>{
       const realIndex = db.states.indexOf(r);
-      const vendor = [r.vendor_2g, r.vendor_4g].filter(Boolean).join(' / ') || '—';
       const altPrimary = (r.alt_ips||[]).filter(a=>a.startsWith('Primary')).map(a=>`<span class="alt">${a}</span>`).join('');
       const altEmergency = (r.alt_ips||[]).filter(a=>a.startsWith('Emergency')).map(a=>`<span class="alt">${a}</span>`).join('');
       return `<tr class="${isNew(r)?'is-new':''}">
@@ -364,7 +366,8 @@ function renderTable(){
         <td class="state-name">${r.state ?? '—'}${isNew(r)?'<span class="new-badge">NEW</span>':''}<div class="sub">${r.mode!==null&&r.mode!==undefined? 'Mode '+r.mode : ''}</div></td>
         <td><span class="cat-badge ${catClass(r.category)}">${r.category ?? '—'}</span></td>
         <td>${r.backend ?? '—'}</td>
-        <td class="mono sub">${vendor}</td>
+        <td class="mono sub">${r.vendor_2g ?? '—'}</td>
+        <td class="mono sub">${r.vendor_4g ?? '—'}</td>
         <td class="mono">${r.primary_ip ?? '—'}${altPrimary}</td>
         <td class="mono sub">${r.port ?? '—'}</td>
         <td class="mono">${r.emergency_ip ?? '—'}${altEmergency}</td>
@@ -817,26 +820,32 @@ document.getElementById('btnPdf').onclick = ()=>{
   const doc = new window.jspdf.jsPDF({orientation:'landscape', unit:'mm', format:size});
   const pw = doc.internal.pageSize.getWidth(), ph = doc.internal.pageSize.getHeight();
   const k = pw/297;                                                  // scale everything relative to A4 landscape
-  const m = 10*k, top = 24*k, bottom = 14*k;
+  const m = 10*k, bottom = 14*k, PT = 0.3528;                        // PT: 1 pt in mm
+  const isStates = currentTab==='states';
   const rows = viewRows(currentTab);
-  const tabName = currentTab==='states' ? 'State IP' : 'Client IP';
+  const tabName = isStates ? 'State IP' : 'Client IP';
   const q = document.getElementById('searchInput').value.trim();
-  const info = [tabName + (currentTab==='states' && activeCategory ? ' · '+activeCategory : ''), q?'Search: "'+q+'"':null, rows.length+' entries', new Date().toLocaleString()].filter(Boolean).join('   |   ');
+  const info = [tabName + (isStates && activeCategory ? ' · '+activeCategory : ''), q?'Search: "'+q+'"':null, rows.length+' entries', new Date().toLocaleString()].filter(Boolean).join('   |   ');
   const FOOT = '© Watsoo Express | AIS 140 State Wise Server Configuration';
-  const ink=[27,36,48], muted=[104,113,126], teal=[13,148,136];
+
+  // same palette as the dashboard
+  const C = { ink:[27,36,48], muted:[104,113,126], teal:[13,148,136], tealDim:[227,245,242], amber:[181,114,10],
+              line:[228,232,238], zebra:[247,249,252], newBg:[255,244,194], white:[255,255,255], panel:[241,244,248] };
+  const CAT = { Transport:{fg:[37,99,235],bg:[221,232,253]}, Mining:{fg:[194,98,10],bg:[251,230,213]}, FCI:{fg:[124,58,237],bg:[236,226,251]}, other:{fg:[14,154,107],bg:[216,242,231]} };
+  const catStyle = c => { const key=String(c||'').replace(/[^A-Za-z]/g,''); return CAT[key] || (key==='FCIPaddy'?CAT.FCI:CAT.other); };
   const clean = v => (v===null||v===undefined||v==='') ? '-' : String(v);
 
   let head, body, widths, urlCol=-1;
-  if(currentTab==='states'){
-    head = [['#','State / UT','Category','Backend','Vendor','Primary IP / URL','Port','Emergency IP','Port','Login URL']];
+  if(isStates){
+    head = [['#','State / UT','Category','Backend','Vendor 2G','Vendor 4G','Primary IP / URL','Port','Emergency IP','Port','Login URL']];
     body = rows.map(r=>{
       const pa=altOf(r,'Primary(alt)'), ea=altOf(r,'Emergency(alt)');
       return [ clean(r.sr), clean(r.state)+(r.mode!==null&&r.mode!==undefined&&r.mode!==''?'\nMode '+r.mode:''), clean(r.category), clean(r.backend),
-               [r.vendor_2g,r.vendor_4g].filter(Boolean).join(' / ')||'-',
+               clean(r.vendor_2g), clean(r.vendor_4g),
                clean(r.primary_ip)+(pa?'\nAlt: '+pa:''), clean(r.port),
                clean(r.emergency_ip)+(ea?'\nAlt: '+ea:''), clean(r.port2), clean(r.url) ];
     });
-    widths=[4,11,8,12,8,18,5,18,5,19]; urlCol=9;
+    widths=[4,11,8,10,8,8,16,5,16,5,17]; urlCol=10;
   }else{
     head = [['#','Client','Primary IP','Port']];
     body = rows.map(r=>[clean(r.sr), clean(r.name), clean(r.primary_ip), clean(r.port)]);
@@ -844,40 +853,109 @@ document.getElementById('btnPdf').onclick = ()=>{
   }
   const tot = widths.reduce((a,b)=>a+b,0), avail = pw-2*m;
   const colStyles = {}; widths.forEach((w,i)=>{ colStyles[i]={cellWidth: avail*w/tot}; });
+  const monoCols = isStates ? [0,4,5,6,7,8,9] : [0,2,3];
+
+  // ---- stat cards (like the dashboard) on the first page ----
+  const topCards = 23*k, cardH = 13*k, startY = topCards+cardH+5*k, top = 24*k;
+  const stats = [
+    [new Set(db.states.map(x=>x.state).filter(Boolean)).size,'States / UTs'],
+    [db.states.length,'Server Entries'],
+    [new Set(db.states.map(x=>x.category).filter(Boolean)).size,'Categories'],
+    [db.clients.length,'Client Integrations'],
+    [db.states.filter(x=>!x.url).length,'Missing Login URL']
+  ];
+  const gap=3*k, cw=(avail-gap*(stats.length-1))/stats.length;
+  const drawCards = ()=>{
+    stats.forEach((st,i)=>{
+      const x=m+i*(cw+gap);
+      doc.setFillColor(...C.white); doc.setDrawColor(...C.line); doc.setLineWidth(0.25*k); doc.roundedRect(x,topCards,cw,cardH,1.6*k,1.6*k,'FD');
+      doc.setFont('courier','bold'); doc.setFontSize(15*k); doc.setTextColor(...C.teal); doc.text(String(st[0]), x+4*k, topCards+7.6*k);
+      doc.setFont('helvetica','normal'); doc.setFontSize(6.4*k); doc.setTextColor(...C.muted); doc.text(st[1].toUpperCase(), x+4*k, topCards+11.2*k);
+    });
+  };
+
+  // ---- custom drawing of every body cell (colors, badges, NEW highlight) ----
+  const drawCell = d=>{
+    if(d.section!=='body') return;
+    const cell=d.cell, ci=d.column.index, r=rows[d.row.index], x=cell.x, y=cell.y, w=cell.width, h=cell.height;
+    const fs=7.5*k, lh=fs*PT*1.2, pad=1.8*k, fresh=isNew(r);
+    // background
+    const bg = fresh ? C.newBg : (d.row.index%2 ? C.zebra : C.white);
+    doc.setFillColor(...bg); doc.rect(x,y,w,h,'F');
+    if(fresh && ci===0){ doc.setFillColor(...C.teal); doc.rect(x,y,0.9*k,h,'F'); }
+    doc.setDrawColor(...C.line); doc.setLineWidth(0.2*k); doc.line(x,y+h,x+w,y+h);
+    // text
+    const lines = cell.text;
+    const put=(txt,ln,font,style,size,color)=>{ doc.setFont(font,style); doc.setFontSize(size); doc.setTextColor(...color); doc.text(txt, x+pad, y+pad+ln*lh, {baseline:'top'}); };
+    const isCat = isStates && ci===2;
+    if(isCat && r.category){
+      const cs=catStyle(r.category); const txt=lines[0]; doc.setFont('helvetica','bold'); doc.setFontSize(fs);
+      const tw=doc.getTextWidth(txt), bh=lh+1.4*k;
+      doc.setFillColor(...cs.bg); doc.roundedRect(x+pad-1*k, y+pad-0.7*k, tw+2*k, bh, 1*k, 1*k,'F');
+      put(txt,0,'helvetica','bold',fs,cs.fg); return;
+    }
+    lines.forEach((t,ln)=>{
+      if(isStates){
+        if(ci===0) put(t,ln,'courier','normal',7*k,C.muted);
+        else if(ci===1){
+          if(/^Mode /.test(t) && ln>0) put(t,ln,'helvetica','bold',fs*0.9,C.muted);
+          else { put(t,ln,'helvetica','bold',fs,C.ink);
+                 if(ln===0 && fresh){ doc.setFont('helvetica','bold'); doc.setFontSize(fs); const tw=doc.getTextWidth(t); doc.setFillColor(...C.teal); doc.roundedRect(x+pad+tw+1.6*k,y+pad-0.2*k,6.2*k,lh*0.95,0.8*k,0.8*k,'F'); doc.setFontSize(5.4*k); doc.setTextColor(255,255,255); doc.text('NEW',x+pad+tw+2.6*k,y+pad+0.45*k,{baseline:'top'}); } }
+        }
+        else if(ci===3) put(t,ln,'helvetica','normal',fs,C.ink);
+        else if(ci===4||ci===5) put(t,ln,'courier','normal',7*k,C.muted);
+        else if(ci===6||ci===8) { if(/^Alt: /.test(t)) put(t,ln,'courier','normal',6.6*k,C.amber); else put(t,ln,'courier','normal',7*k,C.ink); }
+        else if(ci===7||ci===9) put(t,ln,'courier','normal',7*k,C.muted);
+        else if(ci===10) { if(t==='-') put(t,ln,'helvetica','normal',fs,C.muted); else put(t,ln,'helvetica','bold',6.8*k,C.teal); }
+      }else{
+        if(ci===0) put(t,ln,'courier','normal',7*k,C.muted);
+        else if(ci===1){ put(t,ln,'helvetica','bold',fs,C.ink);
+                         if(ln===0 && fresh){ doc.setFont('helvetica','bold'); doc.setFontSize(fs); const tw=doc.getTextWidth(t); doc.setFillColor(...C.teal); doc.roundedRect(x+pad+tw+1.6*k,y+pad-0.2*k,6.2*k,lh*0.95,0.8*k,0.8*k,'F'); doc.setFontSize(5.4*k); doc.setTextColor(255,255,255); doc.text('NEW',x+pad+tw+2.6*k,y+pad+0.45*k,{baseline:'top'}); } }
+        else if(ci===2) put(t,ln,'courier','normal',7*k,C.ink);
+        else put(t,ln,'courier','normal',7*k,C.muted);
+      }
+    });
+    if(isStates && ci===urlCol && cell.raw && cell.raw!=='-') doc.link(x,y,w,h,{url:cell.raw});
+  };
 
   doc.autoTable({
     head, body,
-    startY: top, margin:{top:top, left:m, right:m, bottom:bottom},
-    styles:{font:'helvetica', fontSize:7.5*k, cellPadding:1.6*k, textColor:ink, lineColor:[220,226,234], lineWidth:0.1*k, overflow:'linebreak', valign:'middle'},
-    headStyles:{fillColor:teal, textColor:255, fontStyle:'bold', fontSize:7.5*k},
-    alternateRowStyles:{fillColor:[245,247,250]},
+    theme:'plain',
+    startY: startY, margin:{top:top, left:m, right:m, bottom:bottom},
+    styles:{font:'helvetica', fontSize:7.5*k, cellPadding:1.8*k, textColor:C.ink, overflow:'linebreak', valign:'top'},
+    headStyles:{fillColor:C.teal, textColor:255, fontStyle:'bold', fontSize:7.2*k, valign:'middle'},
     columnStyles: colStyles,
     rowPageBreak:'avoid',
     showHead:'everyPage',
-    didParseCell: d=>{ if(d.section==='body' && d.column.index===urlCol && d.cell.raw!=='-'){ d.cell.styles.textColor=[37,99,235]; } },
-    didDrawCell: d=>{ if(d.section==='body' && d.column.index===urlCol && d.cell.raw && d.cell.raw!=='-'){ doc.link(d.cell.x,d.cell.y,d.cell.width,d.cell.height,{url:d.cell.raw}); } },
+    didParseCell: d=>{ if(d.section==='body' && monoCols.includes(d.column.index)){ d.cell.styles.font='courier'; d.cell.styles.fontSize=7*k; } },
+    willDrawCell: d=>{ if(d.section==='body'){ drawCell(d); return false; } },
     didDrawPage: ()=>{
-      doc.setFont('helvetica','bold'); doc.setFontSize(15*k); doc.setTextColor(...ink);
-      doc.text('VLTS Server Configuration', m, 12*k);
-      doc.setFont('helvetica','normal'); doc.setFontSize(8*k); doc.setTextColor(...muted);
-      doc.text(info, m, 17.5*k);
-      doc.setDrawColor(...teal); doc.setLineWidth(0.5*k); doc.line(m, 20*k, pw-m, 20*k);
+      // brand mark + title (like the dashboard header)
+      doc.setFillColor(...C.teal); doc.roundedRect(m, 5.2*k, 10*k, 10*k, 2.2*k, 2.2*k,'F');
+      doc.setFont('courier','bold'); doc.setFontSize(8*k); doc.setTextColor(4,32,28); doc.text('VLT', m+5*k, 11.4*k, {align:'center'});
+      doc.setFont('helvetica','bold'); doc.setFontSize(15*k); doc.setTextColor(...C.ink); doc.text('VLTS Server Configuration', m+13*k, 10.6*k);
+      doc.setFont('courier','normal'); doc.setFontSize(7.4*k); doc.setTextColor(...C.muted); doc.text(info, m+13*k, 15.2*k);
+      doc.setDrawColor(...C.teal); doc.setLineWidth(0.5*k); doc.line(m, 19.2*k, pw-m, 19.2*k);
     }
   });
+  // stat cards belong on page 1 only
+  doc.setPage(1); drawCards();
   const n = doc.internal.getNumberOfPages();
   for(let i=1;i<=n;i++){
     doc.setPage(i);
-    doc.setFont('helvetica','normal'); doc.setFontSize(7.5*k); doc.setTextColor(...muted);
+    doc.setFont('helvetica','normal'); doc.setFontSize(7.5*k); doc.setTextColor(...C.muted);
     doc.setDrawColor(200,206,214); doc.setLineWidth(0.2*k); doc.line(m, ph-bottom+3*k, pw-m, ph-bottom+3*k);
     doc.text(FOOT, m, ph-bottom+8*k);
     doc.text('Page '+i+' of '+n, pw-m, ph-bottom+8*k, {align:'right'});
   }
-  doc.save('VLTS_Server_Configuration_'+(currentTab==='states'?'State':'Client')+'_'+size.toUpperCase()+'.pdf');
+  doc.save('VLTS_Server_Configuration_'+(isStates?'State':'Client')+'_'+size.toUpperCase()+'.pdf');
   toast('PDF download ho gaya — '+size.toUpperCase()+', '+rows.length+' entries');
 };
 refreshAll();
 updateFooter();
 if(isConnected()){ pullFromSheet(false); startPolling(); }
+// Hover tooltip: show full text of any cell that is cut off with "..."
+document.addEventListener("mouseover",function(e){var c=e.target.closest&&e.target.closest("td,th");if(!c)return;var t=c.innerText.replace(/\s+/g," ").trim();if(c.scrollWidth>c.clientWidth+1||c.scrollHeight>c.clientHeight+1){c.title=t}else if(c.title){c.removeAttribute("title")}});
 </script>
 </body>
 </html>
